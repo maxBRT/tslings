@@ -5,7 +5,7 @@
 
 import { spawn } from "node:child_process";
 import { extname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 export interface RunResult {
   readonly success: boolean;
@@ -29,7 +29,8 @@ const TEST_REPORTER = fileURLToPath(new URL(`./test-reporter${extname(import.met
 
 export function runFile(file: string, options: RunOptions): Promise<RunResult> {
   const args = options.test
-    ? ["--test", `--test-reporter=${TEST_REPORTER}`, "--disable-warning=ExperimentalWarning", file]
+    ? // A URL, not a path: Node reads `--test-reporter=D:\...` on Windows as a URL with the scheme `d:`.
+      ["--test", `--test-reporter=${pathToFileURL(TEST_REPORTER).href}`, "--disable-warning=ExperimentalWarning", file]
     : ["--disable-warning=ExperimentalWarning", file];
 
   return new Promise((resolvePromise, reject) => {

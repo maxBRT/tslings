@@ -4,13 +4,14 @@
 // exactly what runs. Test exercises use Node's built-in test runner.
 import { spawn } from "node:child_process";
 import { extname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 export const DEFAULT_TIMEOUT_MS = 15_000;
 /** tslings' test reporter, next to this file: `.ts` in `src/`, `.js` once built to `dist/`. */
 const TEST_REPORTER = fileURLToPath(new URL(`./test-reporter${extname(import.meta.filename)}`, import.meta.url));
 export function runFile(file, options) {
     const args = options.test
-        ? ["--test", `--test-reporter=${TEST_REPORTER}`, "--disable-warning=ExperimentalWarning", file]
+        ? // A URL, not a path: Node reads `--test-reporter=D:\...` on Windows as a URL with the scheme `d:`.
+            ["--test", `--test-reporter=${pathToFileURL(TEST_REPORTER).href}`, "--disable-warning=ExperimentalWarning", file]
         : ["--disable-warning=ExperimentalWarning", file];
     return new Promise((resolvePromise, reject) => {
         const child = spawn(process.execPath, args, {

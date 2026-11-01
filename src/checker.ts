@@ -158,7 +158,7 @@ function documentOf(file: string): { uri: string } {
 }
 
 export class Checker {
-  readonly #api: API;
+  #api: API;
   readonly #configPath: string;
   #project: Project;
 
@@ -192,6 +192,13 @@ export class Checker {
     if (this.#project.program.getSourceFile(path) === undefined) {
       // A file created after the project was opened (e.g. a new solution file).
       this.#project = this.#openProject({ fileChanges: { created: [documentOf(path)] } });
+    }
+    if (this.#project.program.getSourceFile(path) === undefined) {
+      // On some systems (Windows), the server doesn't pick up the new file from
+      // the change above. A new server lists the project's files again.
+      this.#api.close();
+      this.#api = new API({ cwd: typeScriptPath(resolve(this.#configPath, "..")) });
+      this.#project = this.#openProject({ openProjects: [this.#configPath] });
     }
     const program = this.#project.program;
 

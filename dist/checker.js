@@ -112,6 +112,13 @@ export class Checker {
             // A file created after the project was opened (e.g. a new solution file).
             this.#project = this.#openProject({ fileChanges: { created: [documentOf(path)] } });
         }
+        if (this.#project.program.getSourceFile(path) === undefined) {
+            // On some systems (Windows), the server doesn't pick up the new file from
+            // the change above. A new server lists the project's files again.
+            this.#api.close();
+            this.#api = new API({ cwd: typeScriptPath(resolve(this.#configPath, "..")) });
+            this.#project = this.#openProject({ openProjects: [this.#configPath] });
+        }
         const program = this.#project.program;
         // TS18003 "No inputs were found" is stale once a file is created after the project was opened.
         const configDiagnostics = program.getConfigFileParsingDiagnostics().filter((diagnostic) => diagnostic.code !== 18003);
