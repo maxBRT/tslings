@@ -1,5 +1,4 @@
 node_modules/
-dist/
 .tslings/
 .tslings-state.txt
 *.tgz

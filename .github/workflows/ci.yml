@@ -25,6 +25,13 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
+      - name: Check that the committed build matches the sources
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          rm -rf dist
+          npm run build
+          git diff --exit-code --stat -- dist
+          test -z "$(git status --porcelain -- dist)"
       - run: npm test
       - name: Check the official exercises and solutions
         run: node src/main.ts dev check --require-solutions
