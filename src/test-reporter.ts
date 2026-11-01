@@ -14,7 +14,7 @@
 //
 //   1 passed, 1 failed
 
-import { relative, resolve } from "node:path";
+import { relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { inspect, styleText } from "node:util";
 import type { TestEvent } from "node:test/reporters";
@@ -35,7 +35,8 @@ export function location(error: unknown): string | undefined {
     const [, file = "", line = "", column = ""] = match;
     if (file.includes("/node_modules/")) continue;
     const path = file.startsWith("file://") ? fileURLToPath(file) : file;
-    return `${relative(process.cwd(), path)}:${line}:${column}`;
+    // `/` on every system, like the paths in the rest of tslings' output.
+    return `${relative(process.cwd(), path).split(sep).join("/")}:${line}:${column}`;
   }
   return undefined;
 }

@@ -13,7 +13,7 @@
 //       at exercises/07_unions_narrowing/unions2.ts:24:10
 //
 //   1 passed, 1 failed
-import { relative, resolve } from "node:path";
+import { relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { inspect, styleText } from "node:util";
 // `styleText` checks `process.stdout`: tslings sets FORCE_COLOR or NO_COLOR for this process.
@@ -29,7 +29,8 @@ export function location(error) {
         if (file.includes("/node_modules/"))
             continue;
         const path = file.startsWith("file://") ? fileURLToPath(file) : file;
-        return `${relative(process.cwd(), path)}:${line}:${column}`;
+        // `/` on every system, like the paths in the rest of tslings' output.
+        return `${relative(process.cwd(), path).split(sep).join("/")}:${line}:${column}`;
     }
     return undefined;
 }

@@ -10,7 +10,7 @@
 //
 // Messages, notes and types are wrapped to the terminal width, so that the
 // terminal never cuts a word; code frames never are.
-import { basename, relative } from "node:path";
+import { basename, relative, sep } from "node:path";
 import { styleText } from "node:util";
 import { exerciseNoteFor, noteFor } from "./notes.js";
 import { outputWidth } from "./term.js";
@@ -43,7 +43,7 @@ export function renderProblems(problems, sources, options) {
             lines.push(...codeFrame(problem.file, source, problem.start, problem.end, color, paint, options.cwd));
         }
         else if (problem.file !== "") {
-            lines.push(` ${paint(["bold", "blue"], "-->")} ${relative(options.cwd, problem.file)}`);
+            lines.push(` ${paint(["bold", "blue"], "-->")} ${displayPath(problem.file, options.cwd)}`);
         }
         const gutter = " ".repeat(gutterWidth(source, problem.end));
         const equals = `${gutter} ${paint(["bold", "blue"], "=")}`;
@@ -119,7 +119,7 @@ function codeFrame(file, source, start, end, color, paint, cwd) {
     const blank = " ".repeat(width);
     const bar = paint(["bold", "blue"], "|");
     const out = [
-        `${blank}${paint(["bold", "blue"], "-->")} ${relative(cwd, file)}:${formatPosition(source, start)}`,
+        `${blank}${paint(["bold", "blue"], "-->")} ${displayPath(file, cwd)}:${formatPosition(source, start)}`,
         `${blank} ${bar}`,
     ];
     // Long spans only show their first and last lines.
@@ -184,15 +184,15 @@ export function isLibraryFile(file) {
     return file.replaceAll("\\", "/").includes("/node_modules/");
 }
 /**
- * A path for the output. Library files get a short name, like
- * `lib.es2024.object.d.ts` or `@types/node/fs.d.ts`, instead of a long path
- * into tslings' own `node_modules`.
+ * A path for the output, with `/` on every system. Library files get a short
+ * name, like `lib.es2024.object.d.ts` or `@types/node/fs.d.ts`, instead of a
+ * long path into tslings' own `node_modules`.
  */
 function displayPath(file, cwd) {
     const path = file.replaceAll("\\", "/");
     const index = path.lastIndexOf("/node_modules/");
     if (index === -1)
-        return relative(cwd, file);
+        return relative(cwd, file).split(sep).join("/");
     return /^lib\..*\.d\.ts$/.test(basename(path)) ? basename(path) : path.slice(index + "/node_modules/".length);
 }
 /**

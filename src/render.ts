@@ -11,7 +11,7 @@
 // Messages, notes and types are wrapped to the terminal width, so that the
 // terminal never cuts a word; code frames never are.
 
-import { basename, relative } from "node:path";
+import { basename, relative, sep } from "node:path";
 import { styleText } from "node:util";
 import type { Problem } from "./checker.ts";
 import { exerciseNoteFor, noteFor } from "./notes.ts";
@@ -75,7 +75,7 @@ export function renderProblems(
     if (source !== undefined && problem.file !== "") {
       lines.push(...codeFrame(problem.file, source, problem.start, problem.end, color, paint, options.cwd));
     } else if (problem.file !== "") {
-      lines.push(` ${paint(["bold", "blue"], "-->")} ${relative(options.cwd, problem.file)}`);
+      lines.push(` ${paint(["bold", "blue"], "-->")} ${displayPath(problem.file, options.cwd)}`);
     }
 
     const gutter = " ".repeat(gutterWidth(source, problem.end));
@@ -157,7 +157,7 @@ function codeFrame(
   const bar = paint(["bold", "blue"], "|");
 
   const out = [
-    `${blank}${paint(["bold", "blue"], "-->")} ${relative(cwd, file)}:${formatPosition(source, start)}`,
+    `${blank}${paint(["bold", "blue"], "-->")} ${displayPath(file, cwd)}:${formatPosition(source, start)}`,
     `${blank} ${bar}`,
   ];
 
@@ -228,14 +228,14 @@ export function isLibraryFile(file: string): boolean {
 }
 
 /**
- * A path for the output. Library files get a short name, like
- * `lib.es2024.object.d.ts` or `@types/node/fs.d.ts`, instead of a long path
- * into tslings' own `node_modules`.
+ * A path for the output, with `/` on every system. Library files get a short
+ * name, like `lib.es2024.object.d.ts` or `@types/node/fs.d.ts`, instead of a
+ * long path into tslings' own `node_modules`.
  */
 function displayPath(file: string, cwd: string): string {
   const path = file.replaceAll("\\", "/");
   const index = path.lastIndexOf("/node_modules/");
-  if (index === -1) return relative(cwd, file);
+  if (index === -1) return relative(cwd, file).split(sep).join("/");
   return /^lib\..*\.d\.ts$/.test(basename(path)) ? basename(path) : path.slice(index + "/node_modules/".length);
 }
 

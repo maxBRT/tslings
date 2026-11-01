@@ -7,7 +7,7 @@ import { readFileSync, realpathSync } from "node:fs";
 import { resolve, sep } from "node:path";
 import { NodeFlags, SyntaxKind } from "typescript/unstable/ast";
 import { isArrayLiteralExpression, isAsExpression, isBinaryExpression, isIdentifier, isObjectLiteralExpression, isParenthesizedExpression, isPostfixUnaryExpression, isPrefixUnaryExpression, isPropertyAssignment, isPropertyDeclaration, isShorthandPropertyAssignment, isSpreadAssignment, isSpreadElement, isTypeAssertion, isTypeReferenceNode, isVariableDeclaration, isVariableDeclarationList, } from "typescript/unstable/ast/is";
-import { API, DiagnosticCategory } from "typescript/unstable/sync";
+import { API, DiagnosticCategory, fileNameToDocumentURI } from "typescript/unstable/sync";
 import { describeTypeTest, findTypeTests } from "./type-tests.js";
 import { findUnsafeAny } from "./unsafe-any.js";
 /** Lint rules that are always errors: they stop learners from silencing the type checker. */
@@ -77,6 +77,10 @@ export function typeScriptPath(file) {
     }
     return long.replaceAll("\\", "/");
 }
+/** A file as a `file://` URI, the form the TypeScript server compares file changes in on every system. */
+function documentOf(file) {
+    return { uri: fileNameToDocumentURI(typeScriptPath(file)) };
+}
 export class Checker {
     #api;
     #configPath;
@@ -97,7 +101,7 @@ export class Checker {
     /** Tell the checker that files changed on disk. Pass nothing to drop every cached file. */
     invalidate(files) {
         this.#project = this.#openProject({
-            fileChanges: files === undefined ? { invalidateAll: true } : { changed: files.map(typeScriptPath) },
+            fileChanges: files === undefined ? { invalidateAll: true } : { changed: files.map(documentOf) },
         });
     }
     /** Type-check and lint one file. The file and its extra files are re-read from disk. */
@@ -106,7 +110,7 @@ export class Checker {
         this.invalidate([path, ...(options.extraFiles ?? [])]);
         if (this.#project.program.getSourceFile(path) === undefined) {
             // A file created after the project was opened (e.g. a new solution file).
-            this.#project = this.#openProject({ fileChanges: { created: [path] } });
+            this.#project = this.#openProject({ fileChanges: { created: [documentOf(path)] } });
         }
         const program = this.#project.program;
         // TS18003 "No inputs were found" is stale once a file is created after the project was opened.

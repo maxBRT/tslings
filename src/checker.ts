@@ -27,7 +27,7 @@ import {
   isVariableDeclaration,
   isVariableDeclarationList,
 } from "typescript/unstable/ast/is";
-import { API, DiagnosticCategory } from "typescript/unstable/sync";
+import { API, DiagnosticCategory, fileNameToDocumentURI } from "typescript/unstable/sync";
 import type { Diagnostic, Project, Checker as TypeChecker } from "typescript/unstable/sync";
 import { describeTypeTest, findTypeTests, type ShownType } from "./type-tests.ts";
 import { findUnsafeAny } from "./unsafe-any.ts";
@@ -152,6 +152,11 @@ export function typeScriptPath(file: string): string {
   return long.replaceAll("\\", "/");
 }
 
+/** A file as a `file://` URI, the form the TypeScript server compares file changes in on every system. */
+function documentOf(file: string): { uri: string } {
+  return { uri: fileNameToDocumentURI(typeScriptPath(file)) };
+}
+
 export class Checker {
   readonly #api: API;
   readonly #configPath: string;
@@ -176,7 +181,7 @@ export class Checker {
   invalidate(files?: readonly string[]): void {
     this.#project = this.#openProject({
       fileChanges:
-        files === undefined ? { invalidateAll: true } : { changed: files.map(typeScriptPath) },
+        files === undefined ? { invalidateAll: true } : { changed: files.map(documentOf) },
     });
   }
 
@@ -186,7 +191,7 @@ export class Checker {
     this.invalidate([path, ...(options.extraFiles ?? [])]);
     if (this.#project.program.getSourceFile(path) === undefined) {
       // A file created after the project was opened (e.g. a new solution file).
-      this.#project = this.#openProject({ fileChanges: { created: [path] } });
+      this.#project = this.#openProject({ fileChanges: { created: [documentOf(path)] } });
     }
     const program = this.#project.program;
 
