@@ -12,7 +12,8 @@ and narrows the type as you go. To reuse a check, wrap it in a type guard
 
 The idiom to remember: parse untrusted data once, at the edge, into a precise type, and let the
 rest of the code rely on that type. Libraries like Zod or Valibot automate this; in this chapter
-you write the checks by hand to see what they do.
+you write the checks by hand to see what they do. In chapter 18 you'll build a tiny version of
+such a library, where the type is computed from the schema.
 
 ## Further information
 

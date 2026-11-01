@@ -17,11 +17,11 @@ import type { Equal, Expect } from "#type-assert";
 type Result<T, E> = { ok: true; value: T } | { ok: false; error: E };
 
 class NotFoundError extends Error {
+  override readonly name = "NotFoundError";
   readonly id: string;
 
   constructor(id: string) {
     super(`No record with id ${id}`);
-    this.name = "NotFoundError";
     this.id = id;
   }
 }

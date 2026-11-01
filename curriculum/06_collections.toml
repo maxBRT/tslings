@@ -35,19 +35,19 @@ TS2344 = "A type test failed: `VIEWER` and `EDITOR` must be `Set<Permission>`, n
 name = "collections3"
 dir = "06_collections"
 hint = """
-Annotate the constant with `Record<Plan, number>` and write it as an object
-literal: `{ free: 0, ... }`. Reading a price is then `MONTHLY_PRICE[plan]`.
+Annotate the constant with `Record<Zone, number>` and write it as an object
+literal: `{ domestic: 5, ... }`. Reading a rate is then `SHIPPING_RATE[zone]`.
 For the list, `Object.entries(obj)` returns `[key, value]` pairs: destructure
 each pair in the `map` callback's parameter.
 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/entries"""
 
 [exercises.error_notes]
-TS2322 = "A Map can't promise that a key is present, so `get` returns `number | undefined`, even though the keys are a fixed set of plans. A `Record<Plan, number>` object requires every plan, so reading one is always a `number`."
-TS2741 = "A `Record<Plan, number>` needs a price for every plan, and this object is missing one. Add it: that check is what the `Record` buys you over a Map."
-TS2739 = "`MONTHLY_PRICE` is still a Map. A Map keeps its entries inside, not as properties, so it isn't a `Record<Plan, number>`. Turning it into a Record (the first TODO) fixes this error too."
-TS7053 = "`plan` is a `string` here, because `Object.keys` always returns `string[]`: a value may have more properties at runtime than its type says. Use `Object.entries` to get each price together with its key, instead of indexing with a `string`."
-TS2339 = "`MONTHLY_PRICE` is a plain object now, and plain objects don't have the methods of a Map, like `get`. Read the property with brackets instead: `MONTHLY_PRICE[plan]` is always a `number`, since the `Record` has every plan."
-TS2344 = "A type test failed: `MONTHLY_PRICE` must be a `Record<Plan, number>` object instead of a Map (the first TODO), and `priceList` must keep its `Record<Plan, number>` parameter."
+TS2322 = "A Map can't promise that a key is present, so `get` returns `number | undefined`, even though the keys are a fixed set of zones. A `Record<Zone, number>` object requires every zone, so reading one is always a `number`."
+TS2741 = "A `Record<Zone, number>` needs a rate for every zone, and this object is missing one. Add it: that check is what the `Record` buys you over a Map."
+TS2739 = "`SHIPPING_RATE` is still a Map. A Map keeps its entries inside, not as properties, so it isn't a `Record<Zone, number>`. Turning it into a Record (the first TODO) fixes this error too."
+TS7053 = "`zone` is a `string` here, because `Object.keys` always returns `string[]`: a value may have more properties at runtime than its type says. Use `Object.entries` to get each rate together with its key, instead of indexing with a `string`."
+TS2339 = "`SHIPPING_RATE` is a plain object now, and plain objects don't have the methods of a Map, like `get`. Read the property with brackets instead: `SHIPPING_RATE[zone]` is always a `number`, since the `Record` has every zone."
+TS2344 = "A type test failed: `SHIPPING_RATE` must be a `Record<Zone, number>` object instead of a Map (the first TODO), and `rateList` must keep its `Record<Zone, number>` parameter."
 
 [[exercises]]
 name = "collections4"

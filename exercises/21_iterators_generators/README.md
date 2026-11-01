@@ -20,6 +20,6 @@ with `Array.fromAsync`.
 - [Iterators and generators](https://www.typescriptlang.org/docs/handbook/iterators-and-generators.html)
 - [Iteration protocols](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols)
 - [Iterator helpers](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Iterator)
-- [TypeScript 5.6: iterator helper methods and `IteratorObject`](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-6.html)
+- [TypeScript 5.6: iterator helper methods and `IteratorObject`](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-6.html#iterator-helper-methods)
 - [for await...of](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for-await...of)
 - [Array.fromAsync](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/fromAsync)
