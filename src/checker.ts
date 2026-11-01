@@ -9,10 +9,21 @@ import { resolve } from "node:path";
 import { SyntaxKind } from "typescript/unstable/ast";
 import type { Node, SourceFile } from "typescript/unstable/ast";
 import {
+  isArrayLiteralExpression,
   isAsExpression,
   isBinaryExpression,
+  isIdentifier,
+  isObjectLiteralExpression,
+  isParenthesizedExpression,
+  isPostfixUnaryExpression,
+  isPrefixUnaryExpression,
+  isPropertyAssignment,
+  isShorthandPropertyAssignment,
+  isSpreadAssignment,
+  isSpreadElement,
   isTypeAssertion,
   isTypeReferenceNode,
+  isVariableDeclarationList,
 } from "typescript/unstable/ast/is";
 import { API } from "typescript/unstable/sync";
 import type { Diagnostic, Project } from "typescript/unstable/sync";
@@ -50,7 +61,7 @@ export const CHEAT_RULES = [
 ] as const;
 
 /** Style rules: warnings by default, errors for exercises with `strict_lint = true` and for solutions. */
-export const STYLE_RULES = ["no-var", "eqeqeq"] as const;
+export const STYLE_RULES = ["no-var", "eqeqeq", "prefer-const"] as const;
 
 export type LintRule = (typeof CHEAT_RULES)[number] | (typeof STYLE_RULES)[number];
 
@@ -87,6 +98,10 @@ const RULE_MESSAGES: Record<LintRule, { message: string; note: string }> = {
   "no-var": {
     message: "use `let` or `const` instead of `var`",
     note: "`var` is function-scoped and hoisted, which causes surprising bugs. `const` is the default; use `let` only when you reassign.",
+  },
+  "prefer-const": {
+    message: "this `let` is never reassigned, use `const`",
+    note: "`const` tells the reader (and TypeScript) that the binding never changes. TypeScript also infers narrower types for `const`: `const mode = \"dark\"` has type `\"dark\"`, not `string`.",
   },
   eqeqeq: {
     message: "use `===` and `!==` instead of `==` and `!=`",
@@ -126,6 +141,10 @@ export class Checker {
   check(file: string, options: CheckOptions = {}): CheckResult {
     const path = resolve(file);
     this.invalidate([path]);
+    if (this.#project.program.getSourceFile(path) === undefined) {
+      // A file created after the project was opened (e.g. a new solution file).
+      this.#project = this.#openProject({ fileChanges: { created: [path] } });
+    }
     const program = this.#project.program;
 
     const configDiagnostics = program.getConfigFileParsingDiagnostics();
@@ -196,6 +215,26 @@ function lint(sourceFile: SourceFile, file: string, options: CheckOptions): Prob
     });
   };
 
+  // For prefer-const: `let` bindings with an initializer, and every name assigned anywhere.
+  // Scope-naive on purpose: a name assigned anywhere in the file is never reported.
+  const letBindings: Node[] = [];
+  const assignedNames = new Set<string>();
+  const collectAssigned = (target: Node): void => {
+    if (isIdentifier(target)) assignedNames.add(target.text);
+    else if (isParenthesizedExpression(target)) collectAssigned(target.expression);
+    else if (isArrayLiteralExpression(target)) target.elements.forEach(collectAssigned);
+    else if (isSpreadElement(target)) collectAssigned(target.expression);
+    else if (isObjectLiteralExpression(target)) {
+      for (const property of target.properties) {
+        if (isShorthandPropertyAssignment(property)) collectAssigned(property.name);
+        else if (isPropertyAssignment(property)) collectAssigned(property.initializer);
+        else if (isSpreadAssignment(property)) collectAssigned(property.expression);
+      }
+    } else if (isBinaryExpression(target) && target.operatorToken.kind === SyntaxKind.EqualsToken) {
+      collectAssigned(target.left); // destructuring default: `[a = 1] = xs`
+    }
+  };
+
   const visit = (node: Node): void => {
     switch (node.kind) {
       case SyntaxKind.AnyKeyword:
@@ -216,11 +255,36 @@ function lint(sourceFile: SourceFile, file: string, options: CheckOptions): Prob
         if (/^var\b/.test(text)) {
           report("no-var", node.getStart(sourceFile), node.getStart(sourceFile) + 3);
         }
+        if (/^let\b/.test(text) && isVariableDeclarationList(node)) {
+          const inForInOrOf =
+            node.parent.kind === SyntaxKind.ForOfStatement || node.parent.kind === SyntaxKind.ForInStatement;
+          for (const declaration of node.declarations) {
+            if ((declaration.initializer !== undefined || inForInOrOf) && isIdentifier(declaration.name)) {
+              letBindings.push(declaration.name);
+            }
+          }
+        }
+        break;
+      }
+      case SyntaxKind.PrefixUnaryExpression:
+      case SyntaxKind.PostfixUnaryExpression: {
+        if (
+          (isPrefixUnaryExpression(node) || isPostfixUnaryExpression(node)) &&
+          (node.operator === SyntaxKind.PlusPlusToken || node.operator === SyntaxKind.MinusMinusToken)
+        ) {
+          collectAssigned(node.operand);
+        }
         break;
       }
       case SyntaxKind.BinaryExpression: {
         if (!isBinaryExpression(node)) break;
         const { operatorToken, right, left } = node;
+        if (
+          operatorToken.kind >= SyntaxKind.FirstAssignment &&
+          operatorToken.kind <= SyntaxKind.LastAssignment
+        ) {
+          collectAssigned(left);
+        }
         const looseOperator =
           operatorToken.kind === SyntaxKind.EqualsEqualsToken ||
           operatorToken.kind === SyntaxKind.ExclamationEqualsToken;
@@ -235,6 +299,12 @@ function lint(sourceFile: SourceFile, file: string, options: CheckOptions): Prob
     node.forEachChild(visit);
   };
   sourceFile.forEachChild(visit);
+
+  for (const name of letBindings) {
+    if (isIdentifier(name) && !assignedNames.has(name.text)) {
+      report("prefer-const", name.getStart(sourceFile), name.end);
+    }
+  }
 
   for (const match of sourceFile.text.matchAll(/(\/\/|\/\*)\s*@ts-(ignore|nocheck|expect-error)\b/g)) {
     if (isInsideComment(sourceFile, match.index)) {
