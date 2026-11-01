@@ -1,19 +1,12 @@
-# Cargo
-target/
-Cargo.lock
-!/Cargo.lock
-
-# State file
-.rustlings-state.txt
+node_modules/
+dist/
+.tslings/
+.tslings-state.txt
+*.tgz
 
 # OS
 .DS_Store
-.direnv/
 
 # Editor
 *.swp
 .idea
-*.iml
-
-# Ignore file for editors like Helix
-.ignore

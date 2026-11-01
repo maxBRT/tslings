@@ -1,0 +1,41 @@
+{
+  "name": "tslings",
+  "version": "0.1.0",
+  "description": "Small exercises to get you used to reading and writing idiomatic TypeScript",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maxBRT/tslings.git"
+  },
+  "bin": {
+    "tslings": "./bin/tslings.js"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "exercises",
+    "solutions",
+    "info.toml",
+    "templates"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepare": "npm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test tests/",
+    "dev": "node src/main.ts",
+    "verify": "node scripts/verify.ts"
+  },
+  "dependencies": {
+    "@types/node": "^24.0.0",
+    "smol-toml": "^1.4.0",
+    "typescript": "7.0.2"
+  },
+  "imports": {
+    "#type-assert": "./templates/type-assert.ts"
+  }
+}
