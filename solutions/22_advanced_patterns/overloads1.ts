@@ -1,10 +1,11 @@
 // Overloads give one function several call signatures, for when the return type depends on how
 // it's called. You write the signatures first, without a body, then one implementation that
-// handles every case. Callers only see the signatures. Node's `readFileSync` is typed this way:
+// handles every case. Callers only see the signatures. Node's `readFileSync` is typed roughly
+// like this (simplified):
 //
-//   function readFile(path: string): Buffer;
-//   function readFile(path: string, encoding: "utf8"): string;
-//   function readFile(path: string, encoding?: "utf8"): Buffer | string { ... }
+//   function readFileSync(path: string): Buffer;
+//   function readFileSync(path: string, encoding: "utf8"): string;
+//   function readFileSync(path: string, encoding?: "utf8"): Buffer | string { ... }
 //
 // When every case returns the same type, overloads only get in the way: a caller holding a union
 // matches none of them. One signature with a union parameter is simpler.
@@ -16,6 +17,7 @@ import type { Equal, Expect } from "#type-assert";
 const settings = new Map([
   ["PORT", "8080"],
   ["HOST", "LocalHost"],
+  ["TIMEOUT", "2.5s"],
 ]);
 
 // The implementation signature is not visible to callers. It must be compatible with every
@@ -32,41 +34,42 @@ function serverUrl(): string {
   return `http://${host.toLowerCase()}:${port}`;
 }
 
+// A duration is a number of milliseconds in the code, and a string of seconds like "2.5s" in
+// the settings.
 // Both overloads returned `number`, so they only added a restriction: a `number | string`
-// argument matched neither of them. One signature with a union says everything.
-function toCents(amount: number | string): number {
-  const value = typeof amount === "number" ? amount : Number.parseFloat(amount);
-  return Math.round(value * 100);
+// argument, like the one in `requestTimeoutMs`, matched neither of them.
+function toMilliseconds(duration: number | string): number {
+  return typeof duration === "number" ? duration : Math.round(Number.parseFloat(duration) * 1000);
 }
 
-// Prices come from the API (numbers) or from a CSV import (strings).
-function totalCents(prices: readonly (number | string)[]): number {
-  let total = 0;
-  for (const price of prices) total += toCents(price);
-  return total;
+// The timeout from the settings, or 30 seconds when there is none.
+function requestTimeoutMs(): number {
+  return toMilliseconds(getSetting("TIMEOUT") ?? 30_000);
 }
 
 // Don't change the tests below.
 
 test("getSetting returns the fallback for missing settings", () => {
   assert.equal(getSetting("PORT"), "8080");
-  assert.equal(getSetting("TIMEOUT"), undefined);
-  assert.equal(getSetting("TIMEOUT", "30"), "30");
+  assert.equal(getSetting("RETRIES"), undefined);
+  assert.equal(getSetting("RETRIES", "3"), "3");
 });
 
 test("serverUrl", () => {
   assert.equal(serverUrl(), "http://localhost:8080");
 });
 
-test("totalCents adds up numbers and strings", () => {
-  assert.equal(totalCents([19.99, "5.01", "0.5"]), 2550);
+test("durations in milliseconds or in seconds", () => {
+  assert.equal(toMilliseconds(250), 250);
+  assert.equal(toMilliseconds("0.5s"), 500);
+  assert.equal(requestTimeoutMs(), 2500);
 });
 
 const port = getSetting("PORT");
-const timeout = getSetting("TIMEOUT", "30");
+const retries = getSetting("RETRIES", "3");
 
 type _tests = [
   Expect<Equal<typeof port, string | undefined>>,
-  Expect<Equal<typeof timeout, string>>,
-  Expect<Equal<typeof toCents, (amount: number | string) => number>>,
+  Expect<Equal<typeof retries, string>>,
+  Expect<Equal<typeof toMilliseconds, (duration: number | string) => number>>,
 ];

@@ -39,8 +39,9 @@ function startServer(configText: string): string {
 }
 
 // Returns the messages of `error` and of each of its causes, joined with ": ".
-// A cause that isn't an `Error` (a string, a number...) is turned into a string and ends the
-// chain. Example: "Could not start the server: Invalid JSON in app.json: Unexpected token..."
+// The chain ends at an `Error` without a `cause`, or at a cause that isn't an `Error` (a string,
+// a number...), which is turned into a string.
+// Example: "Could not start the server: Invalid JSON in app.json: Unexpected token..."
 function explain(error: unknown): string {
   if (!(error instanceof Error)) {
     return String(error);

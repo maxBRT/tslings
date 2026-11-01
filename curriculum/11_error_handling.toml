@@ -51,7 +51,7 @@ return type yourself, with the type that means "this never returns".
 https://www.typescriptlang.org/docs/handbook/2/functions.html#never"""
 
 [exercises.error_notes]
-TS2322 = "`fail` always throws, but TypeScript doesn't know that: a function declaration is inferred as returning `void`. So `env.DATABASE_URL ?? fail(...)` looks like `string | void`, and `value` could still be `undefined` after `fail(...)`. Annotate the declaration: `function fail(message: string): never`. (Keep it a `function`: an arrow function stored in a `const` doesn't narrow the code after its calls, even with `: never` on the arrow.)"
+TS2322 = "`fail` always throws, but TypeScript doesn't know that: a function declaration is inferred as returning `void`. So `flags.get(\"--out\") ?? fail(...)` looks like `string | void`, and `value` could still be `undefined` after `fail(...)`. Annotate the declaration: `function fail(message: string): never`. (Keep it a `function`: an arrow function stored in a `const` doesn't narrow the code after its calls, even with `: never` on the arrow.)"
 TS2366 = "TypeScript thinks the function can reach its end after `fail(...)`, because `fail`'s return type is inferred as `void`. Once `fail` is annotated `: never`, the call ends this code path, like a `throw`."
 TS2344 = "This type test checks that `fail`'s return type is `never`: the return type of a function that never returns normally."
 

@@ -24,6 +24,12 @@ const messages = {
   profile: { title: "Your profile" },
 } as const satisfies MessageTree;
 
+// A pattern for building a union key by key: a mapped type computes one answer per key, then
+// indexing it with its own keys reads every answer at once. Without recursion, it looks like:
+//
+//   type StringKeys<T> = { [K in keyof T]: T[K] extends string ? K : never }[keyof T];
+//   // StringKeys<{ id: string; age: number; name: string }> is "id" | "name"
+//
 // TODO: The union of every dotted path to a message in `T`.
 type MessageKey<T> = keyof T & string;
 

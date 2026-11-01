@@ -1,7 +1,9 @@
-// Narrowing doesn't always reach inside callbacks. A callback can run later, and
-// by then a `let` variable may hold something else, so TypeScript drops what you
-// checked about it. A `const` can't change, so copy the value into one, check
-// the const, and the callback keeps the narrowed type.
+// Narrowing doesn't always reach inside callbacks: a callback can run later,
+// when a `let` variable may hold something else. Since TypeScript 5.4, a `let`
+// that's never assigned after the callback is created keeps its narrowing, but
+// `currentUser` is reassigned in `logIn` and `logOut`, which can run at any time.
+// A `const` can't change: copy the value into one, check the const, and the
+// callback keeps the narrowed type.
 //
 // This app queues emails and builds them later, when `flushOutbox` runs. Make
 // `queueWelcomeEmail` compile, and make sure each email goes to the person who

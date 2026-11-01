@@ -1,14 +1,16 @@
 // This quiz tests:
 // - Discriminated unions, generic constraints and `Extract`
-// - Mapped types with key remapping, and template literal types
-// - Async iteration with `for await`
 // - Type-level tests
+// - Parsing `unknown` data with a type guard, and catching only the errors you expect
+// - Async iteration with `for await`
+// - Mapped types with key remapping, and template literal types
 //
-// An event-sourced cart doesn't store its current state. It stores what happened, as a list of
-// events, and gets the state back by replaying them in order. The same events can feed other
-// views, like the statistics at the end.
+// An event-sourced cart doesn't store its current state. It stores what happened, as a log
+// with one JSON event per line, and gets the state back by replaying the events in order. The
+// same events can feed other views, like the statistics at the end.
 //
-// Complete the four TODOs. The tests at the bottom check both the behaviour and the types.
+// Complete the six TODOs, from top to bottom. The tests at the bottom check both the behaviour
+// and the types.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -35,13 +37,18 @@ type Cart = {
 const emptyCart: Cart = { items: [], percentOff: 0, checkedOut: false };
 
 // TODO (1): The member of `CartEvent` whose `type` is `Type`.
-// `EventOf<"itemRemoved">` is `{ type: "itemRemoved"; sku: string }`.
 type EventOf<Type extends EventType> = unknown;
+
+// TODO (2): Pin `EventOf` down with two type tests, written like the ones at the end of the
+// file. `EventOf<"itemRemoved">` is `{ type: "itemRemoved"; sku: string }`. Given two event
+// types, it gives both events: the `type` of `EventOf<"checkedOut" | "couponApplied">` is
+// `"checkedOut" | "couponApplied"`.
+type _eventOfTests = [];
 
 // One function per event type. Each one receives exactly its own kind of event.
 type Reducers = { [Type in EventType]: (cart: Cart, event: EventOf<Type>) => Cart };
 
-// TODO (2): Handle the two missing events. A coupon replaces any previous one. Checking out
+// TODO (3): Handle the two missing events. A coupon replaces any previous one. Checking out
 // marks the cart as checked out.
 const reducers: Reducers = {
   itemAdded: (cart, event) => {
@@ -64,9 +71,19 @@ function applyEvent<Type extends EventType>(cart: Cart, event: EventOf<Type>): C
   return reducers[event.type](cart, event);
 }
 
-// TODO (3): Apply every event of the stream, in order, starting from `emptyCart`.
-async function replay(events: AsyncIterable<CartEvent>): Promise<Cart> {
-  return emptyCart;
+// TODO (4): Is this value, parsed from one line of the log, one of the four events? Every field
+// of that event must be there, with the right type.
+function isCartEvent(value: unknown): value is CartEvent {
+  return false;
+}
+
+type ReplayResult = { readonly cart: Cart; readonly skipped: readonly string[] };
+
+// TODO (5): Read the log line by line, and apply each event in order, starting from `emptyCart`.
+// Skip the lines that aren't valid JSON or aren't a `CartEvent`, and return them, unchanged, in
+// `skipped`. Any other error, like an event sent to a checked-out cart, still rejects.
+async function replay(lines: AsyncIterable<string>): Promise<ReplayResult> {
+  return { cart: emptyCart, skipped: [] };
 }
 
 function cartTotal(cart: Cart): Cents {
@@ -74,7 +91,7 @@ function cartTotal(cart: Cart): Cents {
   return Math.round(subtotal * (1 - cart.percentOff / 100));
 }
 
-// TODO (4): One counter per event type, named after it: `{ itemAddedCount: number; ... }`.
+// TODO (6): One counter per event type, named after it: `{ itemAddedCount: number; ... }`.
 // It works for any union of events with a string `type`, not just `CartEvent`.
 type EventCounts<Event extends { type: string }> = {};
 
@@ -101,27 +118,67 @@ const history: CartEvent[] = [
   { type: "checkedOut" },
 ];
 
-// Pretends to read the events one by one from a database.
-async function* stream(events: readonly CartEvent[]): AsyncGenerator<CartEvent> {
-  for (const event of events) {
+// Pretends to read the log one line at a time from a file.
+async function* stream(lines: readonly string[]): AsyncGenerator<string> {
+  for (const line of lines) {
     await new Promise((resolve) => setTimeout(resolve, 1));
-    yield event;
+    yield line;
   }
 }
 
+function toLog(events: readonly CartEvent[]): string[] {
+  return events.map((event) => JSON.stringify(event));
+}
+
 test("replaying the history rebuilds the cart", async () => {
-  const cart = await replay(stream(history));
+  const { cart, skipped } = await replay(stream(toLog(history)));
   assert.deepEqual(cart, {
     items: [{ sku: "tee", unitPrice: 1500, quantity: 2 }],
     percentOff: 20,
     checkedOut: true,
   });
+  assert.deepEqual(skipped, []);
   assert.equal(cartTotal(cart), 2400);
+});
+
+test("checks every field of every event", () => {
+  assert.equal(isCartEvent({ type: "itemAdded", sku: "tee", unitPrice: 1500, quantity: 1 }), true);
+  assert.equal(isCartEvent({ type: "itemRemoved", sku: "tee" }), true);
+  assert.equal(isCartEvent({ type: "couponApplied", code: "WELCOME5", percentOff: 5 }), true);
+  assert.equal(isCartEvent({ type: "checkedOut" }), true);
+  assert.equal(isCartEvent({ type: "itemAdded", sku: "tee", unitPrice: 1500 }), false);
+  assert.equal(isCartEvent({ type: "itemRemoved", sku: 42 }), false);
+  assert.equal(isCartEvent({ type: "couponApplied", percentOff: 5 }), false);
+  assert.equal(isCartEvent({ type: "refundIssued", sku: "tee" }), false);
+  assert.equal(isCartEvent({ sku: "tee" }), false);
+  assert.equal(isCartEvent("checkedOut"), false);
+  assert.equal(isCartEvent(null), false);
+});
+
+test("lines that aren't cart events are skipped", async () => {
+  const lines = [
+    '{"type":"itemAdded","sku":"tee","unitPrice":1500,"quantity":1}',
+    '{"type":"itemAdded","sku":"mug","unitPrice":"900","quantity":2}',
+    '{"type":"itemRemoved","sku":',
+    '{"type":"refundIssued","sku":"tee"}',
+    "null",
+    '{"type":"checkedOut"}',
+  ];
+  const { cart, skipped } = await replay(stream(lines));
+  assert.deepEqual(cart, {
+    items: [{ sku: "tee", unitPrice: 1500, quantity: 1 }],
+    percentOff: 0,
+    checkedOut: true,
+  });
+  assert.deepEqual(skipped, lines.slice(1, 5));
 });
 
 test("a checked-out cart rejects new events", async () => {
   const events: CartEvent[] = [...history, { type: "itemRemoved", sku: "tee" }];
-  await assert.rejects(replay(stream(events)), /Cart is checked out, can't apply itemRemoved/);
+  await assert.rejects(
+    replay(stream(toLog(events))),
+    /Cart is checked out, can't apply itemRemoved/,
+  );
 });
 
 test("counts every kind of event", () => {
@@ -135,9 +192,10 @@ test("counts every kind of event", () => {
 
 type EmailEvent = { type: "sent"; to: string } | { type: "bounced"; reason: string };
 
+// Your two type tests of TODO (2).
+type _eventOfCount = Expect<Equal<_eventOfTests["length"], 2>>;
+
 type _tests = [
-  Expect<Equal<EventOf<"itemRemoved">, { type: "itemRemoved"; sku: string }>>,
-  Expect<Equal<EventOf<"checkedOut" | "couponApplied">["type"], "checkedOut" | "couponApplied">>,
   Expect<Equal<keyof EventCounts<CartEvent>, `${EventType}Count`>>,
   Expect<Equal<EventCounts<EmailEvent>, { sentCount: number; bouncedCount: number }>>,
 ];

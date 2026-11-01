@@ -18,6 +18,6 @@ make it go away.
 ## Further information
 
 - [`let`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/let) and [`const`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/const) on MDN
-- [Equality comparisons and sameness](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Equality_comparisons_and_sameness)
+- [Equality comparisons and sameness](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Equality_comparisons_and_sameness)
 - [typescript-eslint](https://typescript-eslint.io/)
 - [ESLint rules reference](https://eslint.org/docs/latest/rules/)

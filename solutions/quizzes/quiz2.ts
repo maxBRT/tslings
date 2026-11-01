@@ -1,7 +1,5 @@
-// This is a quiz for the following chapters:
-// - Unions and narrowing
-// - Discriminated unions
-// - Null handling
+// This quiz covers chapters 07 to 09: unions and narrowing, discriminated
+// unions, and null handling.
 //
 // An online shop tracks each order through a few states. The payment and
 // shipping services send events about orders, which move them along:

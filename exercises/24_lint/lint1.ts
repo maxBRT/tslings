@@ -7,7 +7,8 @@
 // created in the loop sees its last value. `let` and `const` belong to their block: each
 // iteration gets its own. (`prefer-const` then asks for `const` wherever you never reassign.)
 //
-// TODO: Fix the lint errors. The test shows the bug that `var` causes here.
+// TODO: Fix the lint errors. tslings stops at lint errors, before the test runs, but the test
+// is there for the bug that `var` causes here: every reader would read the last column.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";

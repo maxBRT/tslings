@@ -21,6 +21,6 @@ and event handlers follow the same pattern, with a union of actions and one
 
 - [Discriminated unions](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions)
 - [The `never` type and exhaustiveness checking](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#exhaustiveness-checking)
-- [Narrowing destructured discriminated unions (TypeScript 4.6)](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-6.html)
-- [The `satisfies` operator (TypeScript 4.9)](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html)
+- [Narrowing destructured discriminated unions (TypeScript 4.6)](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-6.html#control-flow-analysis-for-destructured-discriminated-unions)
+- [The `satisfies` operator (TypeScript 4.9)](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html#the-satisfies-operator)
 - [Extracting state logic into a reducer (React docs)](https://react.dev/learn/extracting-state-logic-into-a-reducer)

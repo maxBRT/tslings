@@ -70,3 +70,18 @@ https://www.typescriptlang.org/docs/handbook/2/conditional-types.html"""
 TS2344 = "This type test compares `DeepReadonly<...>` with the type it should produce. Compare the two sides level by level: nested objects, arrays, the tuple and the function. `Readonly<T>` only changes the top level."
 TS7006 = "This parameter lost its type because `onError` isn't a function type anymore in `DeepReadonly<AppConfig>`: a mapped type turns a function type into `{}`. Don't annotate the parameter. Make `DeepReadonly` leave functions as they are."
 TS2349 = "`onError` isn't callable anymore: a mapped type applied to a function type keeps its properties (it has none) and drops the call signature. Make `DeepReadonly` leave functions alone, and test for them before testing for objects."
+
+[[exercises]]
+name = "conditional6"
+dir = "18_conditional_types"
+hint = """
+`Infer` is a mapped type over the keys of `S`, like the ones of chapter 17. For each key `K`,
+test the kind `S[K]` with conditional types: `S[K] extends "string" ? string : ...`, and chain
+a second one for numbers.
+For `matches`, the return type `value is Infer<S>` turns a `true` into a narrowing, as with
+the type guards of chapter 10.
+https://www.typescriptlang.org/docs/handbook/2/conditional-types.html"""
+
+[exercises.error_notes]
+TS18046 = "`matches` returns a plain `boolean`, so the `if` tells TypeScript nothing about `body`, which stays `unknown`. Give `matches` a type predicate as its return type, `value is ...`, with the type that `Infer` computes from the schema."
+TS2344 = "A type test is false: compare `found` with `expected`. `Infer<S>` must give one property per field of the schema, with the TypeScript type that its kind names."

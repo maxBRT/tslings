@@ -2,13 +2,19 @@
 name = "satisfies1"
 dir = "22_advanced_patterns"
 hint = """
-Write the table without an annotation and put `satisfies Record<string, Route>` after the
-closing brace. Do the same for `notFound` with `satisfies Route`: TypeScript then tells you
-what the assertion was hiding.
+- `routes`: drop the annotation and put `satisfies Record<string, Route>` after the closing
+  brace. That keeps the keys, but `Route` says `path: string`, so the paths still widen:
+  `as const` in front of `satisfies` keeps them.
+- `notFound`: `satisfies Route`, and TypeScript tells you what the assertion was hiding.
+- `current` must accept any route: of the three tools, only one gives it that wider type.
 https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html#the-satisfies-operator"""
 
 [exercises.error_notes]
 TS2345 = "`routes` is annotated as `Record<string, Route>`, so TypeScript forgets which keys the table has: any string is a valid key, and any lookup might find nothing. Don't patch it here with `?.`: let TypeScript infer the table, and check it with `satisfies` instead."
+TS2344 = "A type test is false: compare `found` with `expected`. If a path is `string`, `satisfies` alone widened it, because `Route` says `path: string`: write `as const` in front of `satisfies`. If `current` has the type of `notFound`, it needs the wider type."
+TS2741 = "That's what `as Route` was hiding: the fallback has no `auth` field, so `notFound.auth` was `undefined` at runtime. Add the field."
+TS2339 = "`notFound` has no `auth` field, and with `satisfies` its type is exactly what the object holds. Add `auth` to the object itself (see the error on `satisfies Route`)."
+TS2322 = "`current` was inferred from `notFound`, so its type is that one route: `method: \"GET\"`, `auth: false`. No other route fits. A variable that will hold any route needs the wider `Route` type, and that's the job of an annotation."
 
 [[exercises]]
 name = "brands1"
@@ -32,12 +38,13 @@ hint = """
 Overload signatures go right above the implementation, with the same name and no body:
 `function getSetting(name: string): string | undefined;` and a second one that takes a
 `fallback: string` and returns `string`. Keep the implementation as it is.
-For `toCents`, delete both overload lines: the implementation's signature already says it all.
+For `toMilliseconds`, delete both overload lines: the implementation's signature already says
+it all.
 https://www.typescriptlang.org/docs/handbook/2/functions.html#function-overloads"""
 
 [exercises.error_notes]
 TS18048 = "`getSetting` has a single signature that returns `string | undefined`, even when you pass a fallback. Don't patch the caller with `?.` or `??`: give `getSetting` an overload that says a call with a fallback returns `string`."
-TS2769 = "`price` is `number | string`, and no single overload accepts that union: one takes a number, the other a string. Overloads that all return the same type are better written as one signature with a union parameter."
+TS2769 = "The argument is a string (the setting) or a number (the default, when there is no setting). No single overload accepts that union, since one takes a number and the other a string. Overloads that all return the same type are better written as one signature with a union parameter."
 
 [[exercises]]
 name = "noinfer1"

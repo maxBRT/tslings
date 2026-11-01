@@ -18,6 +18,6 @@ keep a module's public API written down in one place, under one name.
 - [Modules](https://www.typescriptlang.org/docs/handbook/2/modules.html)
 - [Modules reference: theory](https://www.typescriptlang.org/docs/handbook/modules/theory.html)
 - [verbatimModuleSyntax](https://www.typescriptlang.org/tsconfig/#verbatimModuleSyntax)
-- [Running TypeScript natively in Node.js](https://nodejs.org/api/typescript.html)
+- [Running TypeScript natively in Node.js](https://nodejs.org/docs/latest-v24.x/api/typescript.html)
 - [import](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import)
   and [export](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export) on MDN

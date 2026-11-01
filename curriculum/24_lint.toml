@@ -5,8 +5,9 @@ strict_lint = true
 hint = """
 Replace each `var` with `const`, or with `let` if the variable is reassigned. `i++` reassigns
 `i`; `readers.push(...)` changes the array but doesn't reassign `readers`.
-The test fails while `column` is a `var`: all three readers share it, so they all read the
-last column. https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/let"""
+Lint errors stop the check before the test runs, so you won't see the bug itself: with
+`column` as a `var`, all three readers share it, and the line comes out as "pro,pro,pro".
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/let"""
 
 [exercises.error_notes]
 no-var = "A `var` belongs to the whole function, not to its block. In this loop, `column` is ONE variable shared by every iteration, so every closure reads the last column. `let` and `const` give each iteration its own binding. Use `const` unless the variable is reassigned."
@@ -18,7 +19,7 @@ strict_lint = true
 hint = """
 Swap `!=` for `!==` and `==` for `===`, except where the other side is `null`: `value == null`
 is allowed, and it's the clearest way to check for both `null` and `undefined`.
-https://developer.mozilla.org/en-US/docs/Web/JavaScript/Equality_comparisons_and_sameness"""
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Equality_comparisons_and_sameness"""
 
 [exercises.error_notes]
 eqeqeq = "`==` and `!=` convert both sides first: `0 != \"\"` is false, because `\"\"` becomes 0. Use `===` and `!==`, which never convert. Only `x == null` is allowed, because it checks for `null` and `undefined` at once."
@@ -30,10 +31,10 @@ strict_lint = true
 hint = """
 Every `let` that's never reassigned becomes `const`, including the loop variable of `for...of`.
 `total += ...` is a reassignment, so `total` stays `let`.
-For the `!`, keep the result of `prices.get(...)` in a variable, check it for `undefined`, and
-throw an `Error` with the message the test expects. After the check, TypeScript knows it's a
-number."""
+For the `!`, keep the result of `hourlyRates.get(...)` in a variable, check it for
+`undefined`, and throw an `Error` with the message the test expects. After the check,
+TypeScript knows it's a number."""
 
 [exercises.error_notes]
-TS2322 = "`let size = \"M\"` gives `size` the type `string`, because a `let` can be reassigned to any other string later. A `string` doesn't fit `Size`. The `prefer-const` error below points at the declaration, one line up: with `const`, the type is the literal `\"M\"`."
-no-non-null-assertion = "`prices.get()` returns `undefined` for an unknown SKU, and `!` only silences that. Here it turns into `undefined + 0`, so the total is `NaN`. Check the value and throw a clear error instead."
+TS2322 = "`let shift = \"day\"` gives `shift` the type `string`, because a `let` can be reassigned to any other string later. A `string` doesn't fit `Shift`. The `prefer-const` error below points at the declaration, one line up: with `const`, the type is the literal `\"day\"`."
+no-non-null-assertion = "`hourlyRates.get()` returns `undefined` for a project without a rate, and `!` only silences that. Here it turns into `undefined + 0`, so the amount is `NaN`. Check the value and throw a clear error instead."

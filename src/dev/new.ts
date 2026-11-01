@@ -43,8 +43,8 @@ name = "???"
 # when it type-checks, passes the lints and runs successfully.
 # test = true
 
-# tslings always lints exercises. The rules that would silence the type checker (\`any\`, \`as\`,
-# the non-null assertion \`!\` and \`@ts-\` comments) are always errors.
+# tslings always lints exercises. The rules that would silence the type checker (\`any\`, even
+# from \`JSON.parse\`, \`as\`, the non-null assertion \`!\` and \`@ts-\` comments) are always errors.
 # Style rules (\`no-var\`, \`eqeqeq\`, \`prefer-const\`) are warnings. You can optionally set
 # \`strict_lint\` to \`true\` (the default is \`false\`) to only consider the exercise as done
 # when there are no warnings left.
@@ -54,7 +54,7 @@ name = "???"
 # allow_lints = ["no-ts-comment"]
 
 # Optional list of files in the exercise's directory that the exercise imports (sibling modules).
-# They must also exist in the solution's directory if there is a solution.
+# Learners don't edit them. If there is a solution, its directory needs an identical copy.
 # extra_files = ["shapes.ts"]
 
 # A multi-line hint to be shown to users on request.

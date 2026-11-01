@@ -6,7 +6,7 @@ import { paint, stdoutColor, write } from "./term.ts";
 
 /** Returns the process exit code. */
 export async function run(appState: AppState): Promise<number> {
-  appState.restoreCurrentExerciseFiles();
+  write(appState.restoreCurrentExerciseFiles(stdoutColor));
   const exercise = appState.currentExercise;
   const { success, output } = await appState.runner.runExercise(exercise, { color: stdoutColor });
   write(output.endsWith("\n") || output === "" ? output : `${output}\n`);

@@ -23,4 +23,4 @@ Recent JavaScript versions added handy tools that TypeScript knows about:
 - [`Map.groupBy`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map/groupBy)
 - [`Object.entries`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/entries)
 - [`Record<Keys, Type>`](https://www.typescriptlang.org/docs/handbook/utility-types.html#recordkeys-type)
-- [Type compatibility (why `Object.keys` returns `string[]`)](https://www.typescriptlang.org/docs/handbook/type-compatibility.html)
+- [Why `Object.keys` returns `string[]` (Anders Hejlsberg on GitHub)](https://github.com/microsoft/TypeScript/pull/12253#issuecomment-263132208)

@@ -18,6 +18,10 @@ recursive, which is how you write `DeepReadonly` or flatten nested arrays. Keep 
 library-style helpers: in application code, a plain union or an overload is often easier
 to read.
 
+You use such helpers every day, though. Validation libraries like Zod compute the type of
+the data a schema accepts from the schema itself, with a mapped type full of conditional
+types. The last exercise builds a small one.
+
 ## Further information
 
 - [Conditional types](https://www.typescriptlang.org/docs/handbook/2/conditional-types.html)

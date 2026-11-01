@@ -38,16 +38,16 @@ https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unio
 
 [exercises.error_notes]
 TS18048 = "Don't patch this line. With optional fields, checking `status` tells TypeScript nothing about `user` or `error`: the type allows a \"success\" without a user. Change `ProfileState` so that the success state always has a `user` and the error state always has an `error`."
-TS2344 = "A type-level test failed: `ProfileState` doesn't have the shape the tests describe yet. Each status needs its own member of the union, with only the fields that exist in that state: a required `user` in \"success\", a required `error` in \"error\", and nothing but `status` in the other two."
+TS2344 = "A type-level test failed: `ProfileState` doesn't have the shape the tests describe yet. Each status needs its own member of the union, with only the fields that exist in that state: a required `user` in \"success\", a required `error` in \"error\", and nothing but `status` in the other two. While `ProfileState` is one object type, `Extract` finds no member for a status and gives `never`: that's the `never` in \"found\", and `string | number | symbol` is what `keyof never` gives."
 
 [[exercises]]
 name = "discriminated4"
 dir = "08_discriminated_unions"
 hint = """
-In `invoiceTitle`, replace the two lines with one destructuring:
-`const { data, error } = result;`. Checking `error` then narrows `data`.
-`unwrapInvoice` destructures its parameter, which links them too: check
-`error`, throw `new Error(...)` with its message, and return `data` after that.
+TypeScript only links `data` and `error` when both come out of `result` in a
+single `const` destructuring, or in a destructured parameter like
+`unwrapInvoice`'s. Then checking `error` narrows `data`. In `unwrapInvoice`,
+throw when there is an error, with its message, and return `data` after that.
 https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-6.html#control-flow-analysis-for-destructured-discriminated-unions"""
 
 [exercises.error_notes]

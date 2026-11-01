@@ -38,6 +38,9 @@ test("format a position", () => {
 
 test("format a position with an altitude", () => {
   assert.equal(formatPosition([2.29448, 48.85837, 330]), "48.8584, 2.2945 (330 m)");
+});
+
+test("an altitude of 0 (sea level) is an altitude too", () => {
   assert.equal(formatPosition([4.8952, 52.3702, 0]), "52.3702, 4.8952 (0 m)");
 });
 

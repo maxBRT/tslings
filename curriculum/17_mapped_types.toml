@@ -37,7 +37,7 @@ type, `T[K]`, against `AnyFunction`, and answer either `K` (keep the key) or `ne
 https://www.typescriptlang.org/docs/handbook/2/mapped-types.html#key-remapping-via-as"""
 
 [exercises.error_notes]
-TS2739 = "`StateOf<CartStore>` and `ActionsOf<CartStore>` still contain every key of the store, so these objects look incomplete. Don't add the missing keys here: filter them out of the two types with an `as` clause."
+TS2739 = "`StateOf<EditorStore>` and `ActionsOf<EditorStore>` still contain every key of the store, so these objects look incomplete. Don't add the missing keys here: filter them out of the two types with an `as` clause."
 
 [[exercises]]
 name = "mapped4"
@@ -46,11 +46,11 @@ hint = """
 `Record<keyof T, ...>` gives every key the same value type. A mapped type over
 `keyof T` lets you use `T[K]`, the type of the field you're on, inside `FieldState`.
 
-Once that works, `couponCode` becomes a problem: a mapped type over `keyof T` copies
-the `?` from `CheckoutForm`. You saw how to remove a modifier in mapped2.
+Once that works, `badgeName` becomes a problem: a mapped type over `keyof T` copies
+the `?` from `RegistrationForm`. You saw how to remove a modifier in mapped2.
 https://www.typescriptlang.org/docs/handbook/2/mapped-types.html#mapping-modifiers"""
 
 [exercises.error_notes]
-TS18046 = "`FormState` gives every field the same `FieldState<unknown>`, so TypeScript has forgotten what each value holds: a string for `email`, a number for `quantity`. Change `FormState` so each field's state uses that field's own type."
-TS2345 = "The cause is `FormState`, not this call. If the message mentions `unknown` or `{}`, the field's value lost its type. If it ends with `| undefined`, the field's state itself became optional, because a mapped type over `keyof T` copies the `?` of `couponCode`."
-TS18048 = "`couponCode` is optional in `CheckoutForm`, and a mapped type over `keyof T` copies that `?`, so the field's state became optional too. The form needs a state for every field: remove the modifier in `FormState`."
+TS18046 = "`FormState` gives every field the same `FieldState<unknown>`, so TypeScript has forgotten what each value holds: a string for `email`, a number for `seats`. Change `FormState` so each field's state uses that field's own type."
+TS2345 = "The cause is `FormState`, not this call. If the message mentions `unknown` or `{}`, the field's value lost its type. If it ends with `| undefined`, the field's state itself became optional, because a mapped type over `keyof T` copies the `?` of `badgeName`."
+TS18048 = "`badgeName` is optional in `RegistrationForm`, and a mapped type over `keyof T` copies that `?`, so the field's state became optional too. The form needs a state for every field: remove the modifier in `FormState`."

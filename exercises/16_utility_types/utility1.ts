@@ -37,7 +37,9 @@ const DEFAULT_OPTIONS: RequestOptions = Object.freeze({
   retries: 2,
 });
 
-// TODO: Once merged with the defaults, every option has a value.
+// TODO: Once merged with the defaults, every option has a value. In nulls2 you
+// wrote such a type by hand (`ResolvedOptions`, a copy of the options without
+// the `?`). A utility type derives it, so the two can't drift apart.
 function resolveOptions(options: RequestOptions): RequestOptions {
   return { ...DEFAULT_OPTIONS, ...options };
 }

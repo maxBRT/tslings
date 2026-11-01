@@ -7,6 +7,7 @@
 // `await using` does the same with `[Symbol.asyncDispose]()`, for cleanup that must be awaited.
 // Several of them in one block are cleaned up in reverse order. TypeScript only lets you write
 // `using` on a value that is `Disposable`; `await using` also accepts an `AsyncDisposable`.
+// (`using` is recent JavaScript: Node.js runs it from version 24 on.)
 
 import { test } from "node:test";
 import assert from "node:assert/strict";

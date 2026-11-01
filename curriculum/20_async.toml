@@ -2,15 +2,17 @@
 name = "async1"
 dir = "20_async"
 hint = """
-`ReturnType<typeof fetchProfile>` is a `Promise<...>`. Which utility type unwraps it, the way
-`await` unwraps a value?
-In `greet`, an async function's return type is always a `Promise` of something. And the
-profile is only there once the promise resolves: what keyword waits for it?
-https://www.typescriptlang.org/docs/handbook/utility-types.html#awaitedtype"""
+An async function's return type is always a `Promise` of something: that goes for `greet`,
+and for the loaders the tests pass to it, like `fetchProfile`. Write the type of
+`loadProfile` the way you would describe `fetchProfile`: what it takes, and what it returns.
+Then the profile is only there once the promise resolves: what keyword waits for it?
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function"""
 
 [exercises.error_notes]
-TS18046 = "`Profile` is still `unknown`, so TypeScript won't let you read `.plan`. Don't narrow here: define `Profile` as what `fetchProfile` resolves to, and the property becomes available."
-TS2339 = "`fetchProfile` returns a Promise of a profile, not a profile, and a Promise doesn't have the profile's properties. The profile only exists once the promise resolves: wait for it with `await`."
+TS1064 = "An async function always returns a Promise, whatever its body returns. Its return type is `Promise<...>` of the type the body returns."
+TS2345 = "A Promise of a profile is not a profile. On a call to `greet`, the loader passed in is async, but the type of `loadProfile` says it returns the profile itself: fix that type, not the test. Inside `greet`, the profile isn't there yet: wait for it with `await`."
+TS2739 = "`profile` is a Promise of a profile, and a Promise has none of the profile's fields. The profile only exists once the promise resolves: wait for it with `await`."
+TS2339 = "`loadProfile` returns a Promise of a profile, not a profile, and a Promise doesn't have the profile's properties. The profile only exists once the promise resolves: wait for it with `await`."
 
 [[exercises]]
 name = "async2"
@@ -64,7 +66,9 @@ hint = """
 Destructure them, and the `let` and the `new Promise(...)` can go.
 Then listen to the signal's "abort" event with `addEventListener`: in the listener, forget the
 pending call and reject with the signal's reason.
-An already-aborted signal never fires "abort" again, so check `signal.aborted` before sending.
+An already-aborted signal never fires "abort" again, so check `signal.aborted` before sending,
+and return `Promise.reject(signal.reason)`. Don't throw (`signal.throwIfAborted()` throws):
+callers of a function that returns a promise expect every failure to come through it.
 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/withResolvers
 https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal"""
 

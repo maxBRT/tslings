@@ -7,10 +7,9 @@
 // `await using` does the same with `[Symbol.asyncDispose]()`, for cleanup that must be awaited.
 // Several of them in one block are cleaned up in reverse order. TypeScript only lets you write
 // `using` on a value that is `Disposable`; `await using` also accepts an `AsyncDisposable`.
+// (`using` is recent JavaScript: Node.js runs it from version 24 on.)
 //
-// TODO: Make `Connection` disposable: disposing a connection releases it.
-// TODO: Make `Transaction` async-disposable: disposing one that wasn't committed rolls it back.
-// Then use `await using` in `importOrders`, so that a failed import is rolled back.
+// Make both classes disposable, then let `importOrders` roll back a failed import.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -43,6 +42,8 @@ class Connection {
     this.#released = true;
     this.#log.push("release");
   }
+
+  // TODO: Make `Connection` disposable: disposing a connection releases it.
 }
 
 class Transaction {
@@ -67,6 +68,9 @@ class Transaction {
     this.#finished = true;
     this.#log.push("rollback");
   }
+
+  // TODO: Make `Transaction` async-disposable: disposing one that is still unfinished rolls it
+  // back.
 }
 
 function countOrders(log: string[], sql: string): number {
@@ -76,6 +80,7 @@ function countOrders(log: string[], sql: string): number {
 
 async function importOrders(log: string[], rows: readonly Row[]): Promise<void> {
   using connection = new Connection(log);
+  // TODO: Declare the transaction so that a failed import is rolled back.
   const transaction = await connection.begin();
   for (const row of rows) await transaction.insert(row);
   await transaction.commit();

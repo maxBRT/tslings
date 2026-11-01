@@ -8,10 +8,11 @@
 //     |       ^^^^^
 //     = note: ...
 
-import { relative } from "node:path";
+import { basename, relative } from "node:path";
 import { styleText } from "node:util";
 import type { Problem } from "./checker.ts";
 import { noteFor } from "./notes.ts";
+import type { ShownType } from "./type-tests.ts";
 
 type Style = Parameters<typeof styleText>[0];
 
@@ -31,6 +32,9 @@ export function renderProblems(
   const paint = (style: Style, text: string): string =>
     options.color ? styleText(style, text, { validateStream: false }) : text;
 
+  // A note is shown in full under the first error it explains, not repeated under each one.
+  const shownNotes = new Set<string>();
+
   const blocks = problems.map((problem) => {
     const lines: string[] = [];
     const color: "red" | "yellow" = problem.severity === "error" ? "red" : "yellow";
@@ -46,22 +50,23 @@ export function renderProblems(
     }
 
     const gutter = " ".repeat(gutterWidth(source, problem.end));
+    const equals = `${gutter} ${paint(["bold", "blue"], "=")}`;
     for (const detail of problem.details) {
-      lines.push(`${gutter} ${paint(["bold", "blue"], "=")} ${detail}`);
+      lines.push(`${equals} ${detail}`);
     }
+    lines.push(...typeLines(problem.types ?? [], gutter, equals));
     for (const related of problem.related) {
-      const relatedSource = sources.get(related.file);
-      const where =
-        relatedSource === undefined
-          ? relative(options.cwd, related.file)
-          : `${relative(options.cwd, related.file)}:${formatPosition(relatedSource, related.start)}`;
-      lines.push(`${gutter} ${paint(["bold", "blue"], "=")} ${paint("bold", "related")}: ${related.message} (${where})`);
+      const relatedSource = isLibraryFile(related.file) ? undefined : sources.get(related.file);
+      const path = displayPath(related.file, options.cwd);
+      const where = relatedSource === undefined ? path : `${path}:${formatPosition(relatedSource, related.start)}`;
+      lines.push(`${equals} ${paint("bold", "related")}: ${related.message} (${where})`);
     }
 
     const note = options.notes?.[problem.code] ?? problem.note ?? noteFor(problem.code);
-    if (note !== undefined) {
+    if (note !== undefined && !shownNotes.has(note)) {
+      shownNotes.add(note);
       const [first = "", ...rest] = wrap(note, 76);
-      lines.push(`${gutter} ${paint(["bold", "blue"], "=")} ${paint(["bold", "cyan"], "help")}: ${first}`);
+      lines.push(`${equals} ${paint(["bold", "cyan"], "help")}: ${first}`);
       for (const line of rest) lines.push(`${gutter}         ${line}`);
     }
     return lines.join("\n");
@@ -158,11 +163,80 @@ function range(from: number, to: number): number[] {
   return Array.from({ length: to - from + 1 }, (_, index) => from + index);
 }
 
+/** Files of TypeScript's standard library and of npm packages. */
+export function isLibraryFile(file: string): boolean {
+  return file.replaceAll("\\", "/").includes("/node_modules/");
+}
+
+/**
+ * A path for the output. Library files get a short name, like
+ * `lib.es2024.object.d.ts` or `@types/node/fs.d.ts`, instead of a long path
+ * into tslings' own `node_modules`.
+ */
+function displayPath(file: string, cwd: string): string {
+  const path = file.replaceAll("\\", "/");
+  const index = path.lastIndexOf("/node_modules/");
+  if (index === -1) return relative(cwd, file);
+  return /^lib\..*\.d\.ts$/.test(basename(path)) ? basename(path) : path.slice(index + "/node_modules/".length);
+}
+
+/** Types longer than this are split into one union member per line. */
+const MAX_TYPE_LINE = 100;
+
+/**
+ * `= expected: A` and `= found:    B`, aligned so they're easy to compare. A
+ * long union gets one member per line.
+ */
+function typeLines(types: readonly ShownType[], gutter: string, equals: string): string[] {
+  const width = Math.max(0, ...types.map((shown) => shown.label.length));
+  const lines: string[] = [];
+  for (const { label, type } of types) {
+    const prefix = `${label}:${" ".repeat(width - label.length)} `;
+    const members = splitUnion(type);
+    if (gutter.length + 3 + prefix.length + type.length <= MAX_TYPE_LINE || members.length < 2) {
+      lines.push(`${equals} ${prefix}${type}`);
+      continue;
+    }
+    const [first = "", ...rest] = members;
+    lines.push(`${equals} ${prefix}${first}`);
+    const indent = " ".repeat(gutter.length + 3 + prefix.length);
+    for (const member of rest) lines.push(`${indent}| ${member}`);
+  }
+  return lines;
+}
+
+/** The members of a union type as TypeScript prints it, without splitting nested types. */
+export function splitUnion(type: string): string[] {
+  const members: string[] = [];
+  let depth = 0;
+  let quote: string | undefined;
+  let start = 0;
+  for (let index = 0; index < type.length; index++) {
+    const char = type[index];
+    if (quote !== undefined) {
+      if (char === "\\") index++;
+      else if (char === quote) quote = undefined;
+    } else if (char === '"' || char === "'" || char === "`") {
+      quote = char;
+    } else if (char === "(" || char === "[" || char === "{" || char === "<") {
+      depth++;
+    } else if (char === ")" || char === "]" || char === "}" || (char === ">" && type[index - 1] !== "=")) {
+      depth--;
+    } else if (depth === 0 && type.startsWith(" | ", index - 1)) {
+      members.push(type.slice(start, index - 1));
+      start = index + 2;
+    }
+  }
+  members.push(type.slice(start));
+  return members;
+}
+
+/** Wrap text to `width` columns, never inside a `code span`. */
 function wrap(text: string, width: number): string[] {
   const lines: string[] = [];
   for (const paragraph of text.split("\n")) {
     let line = "";
-    for (const word of paragraph.split(" ")) {
+    for (const word of words(paragraph)) {
       if (line.length > 0 && line.length + word.length + 1 > width) {
         lines.push(line);
         line = word;
@@ -173,4 +247,22 @@ function wrap(text: string, width: number): string[] {
     lines.push(line);
   }
   return lines;
+}
+
+/** Split on spaces, except the spaces inside `code spans`. */
+function words(paragraph: string): string[] {
+  const result: string[] = [];
+  let word = "";
+  let inCode = false;
+  for (const char of paragraph) {
+    if (char === "`") inCode = !inCode;
+    if (char === " " && !inCode) {
+      result.push(word);
+      word = "";
+    } else {
+      word += char;
+    }
+  }
+  result.push(word);
+  return result;
 }

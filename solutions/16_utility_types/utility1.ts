@@ -41,6 +41,7 @@ const DEFAULT_OPTIONS: Readonly<Required<RequestOptions>> = Object.freeze({
 
 // Callers pass the loose type, the rest of the code gets the complete one.
 // This "optional in, required out" pair is a common shape for option objects.
+// It's the `ClientOptions`/`ResolvedOptions` pair of nulls2, without the copy.
 function resolveOptions(options: RequestOptions): Required<RequestOptions> {
   return { ...DEFAULT_OPTIONS, ...options };
 }

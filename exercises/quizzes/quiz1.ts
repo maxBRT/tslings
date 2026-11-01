@@ -38,6 +38,7 @@ function lowStock(
 
 // TODO: The value of the stock (price times quantity, in cents) per category.
 // Every category must appear, with 0 when nothing of it is in stock.
+// Discontinued items count too: their units are still on the shelves.
 function stockValue(
   catalog: readonly Item[],
   stock: ReadonlyMap<string, number>,

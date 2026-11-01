@@ -6,7 +6,7 @@ import { closeSync, existsSync, openSync, readFileSync, realpathSync, writeFileS
 import type { Editor } from "./editor.ts";
 import { createExercise, type Exercise, type ExerciseRunner } from "./exercise.ts";
 import { type ExerciseInfo, solutionPath } from "./info-file.ts";
-import { restoreMissingFiles, writeExerciseToDisk, writeSolutionToDisk } from "./package-files.ts";
+import { restoreExerciseFiles, writeExerciseToDisk, writeSolutionToDisk } from "./package-files.ts";
 import { checkParallelism, runPool } from "./pool.ts";
 import {
   type CheckProgress,
@@ -245,9 +245,18 @@ export class AppState {
     return existsSync(path) ? path : undefined;
   }
 
-  /** Official exercises: bring back files the learner deleted, before running the exercise. */
-  restoreCurrentExerciseFiles(): void {
-    if (this.#source === "official") restoreMissingFiles(this.currentExercise);
+  /**
+   * Official exercises: before running the exercise, bring back its file if
+   * the learner deleted it, and its extra files as tslings ships them. Returns
+   * a note for the learner when an extra file had been edited, or `""`.
+   */
+  restoreCurrentExerciseFiles(color: boolean): string {
+    if (this.#source !== "official") return "";
+    const notes = restoreExerciseFiles(this.currentExercise).map(
+      (file) =>
+        `${paint(["bold", "cyan"], "note", color)}: ${file} is provided by tslings and was restored. Make your changes in ${this.currentExercise.path}.\n`,
+    );
+    return notes.length === 0 ? "" : `${notes.join("")}\n`;
   }
 
   /**
@@ -260,7 +269,7 @@ export class AppState {
     const progresses: CheckProgress[] = this.#exercises.map(() => "none");
 
     const runOne = async (index: number): Promise<void> => {
-      if (this.#source === "official") restoreMissingFiles(this.#exercise(index));
+      if (this.#source === "official") restoreExerciseFiles(this.#exercise(index));
       progresses[index] = "checking";
       visualizer.update(progresses);
       try {

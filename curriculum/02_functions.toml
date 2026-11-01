@@ -52,7 +52,7 @@ https://www.typescriptlang.org/docs/handbook/2/functions.html#function-type-expr
 TS7019 = "A rest parameter collects the remaining arguments into an array, so its type is an array type, like `string[]`. Here it's an array of price rules."
 TS7006 = "An arrow function without annotations gets its parameter types from the function type expected where it's written. Here there isn't one yet: either `PriceRule` is still `unknown`, or `rules` has no type. Fix both and this error disappears, without annotating `price`."
 TS18046 = "`rule` is a `PriceRule`, and `PriceRule` is still `unknown`, so TypeScript doesn't know it can be called. Define `PriceRule` as a function type."
-TS2344 = "A type test failed: `PriceRule` must be a function type that takes a number and returns a number, and `rules` must be an array of `PriceRule`."
+TS2344 = "A type test failed: `PriceRule` must be a function type that takes a number and returns a number, and `rules` must be an array of `PriceRule`. Until `PriceRule` is defined, the expected types show it as `unknown`."
 
 [[exercises]]
 name = "functions5"

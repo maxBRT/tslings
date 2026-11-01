@@ -7,7 +7,7 @@
 // The rule has one exception: `x == null` is true for both `null` and `undefined`, a common
 // shorthand that the rule allows.
 //
-// TODO: Fix the lint errors. One of them hides a real bug; the tests show which.
+// TODO: Fix the lint errors. One of them hides a real bug: read the tests to see which.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";

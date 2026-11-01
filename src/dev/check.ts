@@ -225,11 +225,26 @@ async function checkSolutions(requireSolutions: boolean, info: InfoFile, runner:
   checkUnexpectedFiles("solutions", solutionFiles);
 }
 
-/** Extra TypeScript files must type-check and lint cleanly on their own. */
+/**
+ * Extra files are provided, not edited: tslings restores the official ones
+ * before each check. Both copies must be the same, and TypeScript files must
+ * type-check and lint cleanly on their own.
+ */
 function checkExtraFiles(info: InfoFile, runner: ExerciseRunner): void {
   const checked = new Set<string>();
   for (const exercise of info.exercises) {
-    for (const extra of [...extraFilePaths("exercises", exercise), ...extraFilePaths("solutions", exercise)]) {
+    const solutionExtras = extraFilePaths("solutions", exercise);
+    extraFilePaths("exercises", exercise).forEach((extra, index) => {
+      const solutionExtra = solutionExtras[index];
+      if (solutionExtra === undefined || !existsSync(extra) || !existsSync(solutionExtra)) return;
+      if (!readFileSync(extra).equals(readFileSync(solutionExtra))) {
+        throw new Error(
+          `The extra file \`${extra}\` of the exercise \`${exercise.name}\` differs from \`${solutionExtra}\`. Extra files are provided to the learner, not edited, so both copies must be identical`,
+        );
+      }
+    });
+
+    for (const extra of [...extraFilePaths("exercises", exercise), ...solutionExtras]) {
       if (!extra.endsWith(".ts") || checked.has(extra) || !existsSync(extra)) continue;
       checked.add(extra);
       const { success, output } = runner.checkOnly(extra, { strictLint: true, color: stdoutColor });

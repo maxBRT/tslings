@@ -127,9 +127,15 @@ test("rejects with the reason given to abort()", async () => {
 
 test("doesn't even send a call whose signal has already aborted", async () => {
   const { client, sent } = connect();
-  await assert.rejects(within(client.call("thumbnail", AbortSignal.abort())), {
-    name: "AbortError",
-  });
-  assert.deepEqual(sent, []);
+  let call: Promise<string>;
+  try {
+    call = client.call("thumbnail", AbortSignal.abort());
+  } catch {
+    // Code that gets a promise handles failures with `await` or `.catch()`, so a function that
+    // returns a promise must report every failure through it, even one known before it starts.
+    assert.fail("`call` threw instead of returning a rejected promise");
+  }
+  assert.deepEqual(sent, [], "the call was sent although its signal had already aborted");
+  await assert.rejects(within(call), { name: "AbortError" });
   assert.equal(client.pendingCount, 0);
 });

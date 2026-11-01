@@ -34,8 +34,11 @@ properties). `npm run build` compiles it to `dist/` for the published package.
 1. **Type-check** the file with TypeScript 7 and the strict settings in
    [`templates/tsconfig.json`](templates/tsconfig.json).
 2. **Lint.** These rules are always errors because they let learners silence the
-   checker: `no-explicit-any`, `no-type-assertion` (`as const` is allowed),
-   `no-non-null-assertion`, `no-ts-comment`. The style rules `no-var`, `eqeqeq` and
+   checker: `no-explicit-any`, `no-unsafe-any` (an `any` nobody wrote, from
+   `JSON.parse` or `new Map()`, flowing into an unannotated variable, a `return` or
+   an argument; `const data: unknown = JSON.parse(text)` is fine),
+   `no-type-assertion` (`as const` is allowed), `no-non-null-assertion` (also
+   `let x!: T`), `no-ts-comment`. The style rules `no-var`, `eqeqeq` and
    `prefer-const` are warnings, or errors with `strict_lint = true`. Solutions are
    always checked with style rules as errors.
 3. **Run** the file with Node: `node --test` for exercises with tests, plain
@@ -65,7 +68,8 @@ The exercise is done when all three pass.
   code under test. If that passes, the tests need to be stronger.
 - Add a solution at `solutions/<topic>/<topic><n>.ts`, written the way you would
   write it at work, with comments where a choice isn't obvious.
-- Add the metadata to `info.toml`, then run `node src/main.ts dev check`.
+- Add the metadata to `info.toml`, then run `node src/main.ts dev check`. Read the
+  output of the unsolved exercise as a learner would: `node src/main.ts run <name>`.
 
 ### Exercise metadata
 
@@ -81,11 +85,16 @@ Link the handbook page: https://www.typescriptlang.org/docs/handbook/2/narrowing
 test = false                     # no tests: run the file and show its output
 strict_lint = true               # style lint warnings become errors
 allow_lints = ["no-ts-comment"]  # only when breaking the rule is the lesson
-extra_files = ["shapes.ts"]      # sibling modules the exercise imports
+extra_files = ["shapes.ts"]      # sibling modules the exercise imports (see below)
 
 [exercises.error_notes]          # a help line for the error you expect learners to hit
 TS2339 = "`radius` only exists on circles. Check `kind` before reading it."
 ```
+
+Extra files are provided, not edited: tslings writes them again before each check,
+so editing one can't solve an exercise. Put the same file in `exercises/<dir>/`
+and `solutions/<dir>/` (`dev check` compares them), and start it with
+`// Provided by tslings and restored before each check, so don't edit this file.`
 
 `error_notes` is the main tool to make an exercise friendly. You know which error
 the learner will see first, so explain it in their terms. Keys are TypeScript

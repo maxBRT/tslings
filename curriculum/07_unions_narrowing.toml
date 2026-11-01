@@ -72,11 +72,11 @@ prefer-const = "Keep the `let` this time: the exercise is to reassign `value` wh
 name = "unions6"
 dir = "07_unions_narrowing"
 hint = """
-Above the `if`, write `const user = currentUser;`, then check and use `user`
-everywhere instead of `currentUser`. The callback captures `user`, which can't
-be reassigned, so the check stays valid when the email is built, and logging
-someone else in later doesn't change who gets it.
-https://www.typescriptlang.org/docs/handbook/2/narrowing.html"""
+The callback needs a value that can't change between now and when it runs.
+Which kind of declaration can't be reassigned? Narrow that one, and use it in
+the callback. It also decides who gets the email: the callback keeps the user
+from when it was queued, even if someone else logs in before the flush.
+https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-4.html#preserved-narrowing-in-closures-following-last-assignments"""
 
 [exercises.error_notes]
 TS18048 = "You did check `currentUser` above, but this arrow function runs later, when the outbox is flushed. `currentUser` is a `let` that `logIn` and `logOut` can change before then, so TypeScript doesn't carry the check into the callback. Copy it into a `const` and check that instead: a const can't change, so the check still holds inside the callback."

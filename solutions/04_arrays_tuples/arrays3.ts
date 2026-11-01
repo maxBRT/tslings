@@ -7,46 +7,53 @@
 // filtered array loses `undefined`. The JavaScript habit `.filter(Boolean)` gets
 // no such treatment, and it also throws away `0` and `""`.
 //
-// Ratings come from a form as text, from 0 to 5 stars. Fix `validRatings`.
+// A survey asks customers how likely they are to recommend the product, from 0 to
+// 10, and the answers arrive from the form as text. Fix `validScores`.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import type { Equal, Expect } from "#type-assert";
 
-function parseRating(input: string): number | undefined {
+function parseScore(input: string): number | undefined {
   if (input.trim() === "") return undefined;
-  const stars = Number(input);
-  return Number.isInteger(stars) && stars >= 0 && stars <= 5 ? stars : undefined;
+  const score = Number(input);
+  return Number.isInteger(score) && score >= 0 && score <= 10 ? score : undefined;
 }
 
-function validRatings(inputs: readonly string[]): number[] {
-  // TypeScript infers `(stars) => stars is number` from this arrow function,
-  // so `filter` returns `number[]`. `typeof stars === "number"` works too.
+function validScores(inputs: readonly string[]): number[] {
+  // TypeScript infers `(score) => score is number` from this arrow function,
+  // so `filter` returns `number[]`. `typeof score === "number"` works too.
   // Before TypeScript 5.5 you had to write the predicate yourself:
-  // `.filter((stars): stars is number => stars !== undefined)`.
-  return inputs.map(parseRating).filter((stars) => stars !== undefined);
+  // `.filter((score): score is number => score !== undefined)`.
+  return inputs.map(parseScore).filter((score) => score !== undefined);
 }
 
-function averageRating(inputs: readonly string[]): number {
-  const ratings = validRatings(inputs);
-  if (ratings.length === 0) return 0;
-  return ratings.reduce((sum, stars) => sum + stars, 0) / ratings.length;
+// Net Promoter Score: the percentage of promoters (9 or 10) minus the percentage of
+// detractors (0 to 6), from -100 to 100. No answers, no score.
+function netPromoterScore(inputs: readonly string[]): number | null {
+  const scores = validScores(inputs);
+  if (scores.length === 0) return null;
+  const promoters = scores.filter((score) => score >= 9).length;
+  const detractors = scores.filter((score) => score <= 6).length;
+  return Math.round(((promoters - detractors) / scores.length) * 100);
 }
 
 // Don't change the tests below.
 
-test("drops what isn't a rating", () => {
-  assert.deepEqual(validRatings(["4", "five", "", "5", "9", "3.5"]), [4, 5]);
+test("drops what isn't a score", () => {
+  assert.deepEqual(validScores(["9", "ten", "", "10", "11", "7.5"]), [9, 10]);
 });
 
-test("zero stars is a rating too", () => {
-  assert.deepEqual(validRatings(["0", "2", "0"]), [0, 2, 0]);
+test("zero is a score too", () => {
+  assert.deepEqual(validScores(["0", "8", "0"]), [0, 8, 0]);
 });
 
-test("average rating", () => {
-  assert.equal(averageRating(["4", "oops", "0", "5"]), 3);
-  assert.equal(averageRating(["?"]), 0);
+test("net promoter score", () => {
+  // Two promoters (10 and 9), one passive (7), one detractor (0): (2 - 1) / 4.
+  assert.equal(netPromoterScore(["10", "oops", "0", "9", "7"]), 25);
+  assert.equal(netPromoterScore(["0", "3"]), -100);
+  assert.equal(netPromoterScore(["?"]), null);
 });
 
 // Type tests: each line only compiles when the two types are exactly the same.
-type _tests = [Expect<Equal<ReturnType<typeof validRatings>, number[]>>];
+type _tests = [Expect<Equal<ReturnType<typeof validScores>, number[]>>];

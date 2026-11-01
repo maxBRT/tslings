@@ -89,7 +89,8 @@ test("extra properties are fine on values that aren't fresh literals", () => {
   const fromConfig = { maxAttempts: 1, owner: "platform-team" };
   const logger = createMemoryLogger();
   assert.equal(withRetries(() => true, fromConfig, logger), true);
-  // `console` has `info` and `warn` too, so it is a Logger.
+  // `console` has `info` and `warn` too, so it is a Logger. This call really
+  // prints, which is the "succeeded on attempt 1" line above the test results.
   assert.equal(withRetries(() => true, fromConfig, console), true);
 });
 

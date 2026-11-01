@@ -10,9 +10,7 @@
 // a delay; an `AbortController` aborts when you call `controller.abort(reason)`. Either way,
 // `signal.reason` says why, and the signal fires an "abort" event.
 //
-// TODO: Create the promise with `Promise.withResolvers`.
-// TODO: When `signal` aborts, forget the call and reject with `signal.reason`. If the signal
-// has already aborted, reject right away without sending anything.
+// Finish `call`: create its promise with `Promise.withResolvers`, and make it listen to `signal`.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -43,11 +41,15 @@ class RpcClient {
   }
 
   call(method: string, signal: AbortSignal): Promise<string> {
+    // TODO: If the signal has already aborted, reject right away with `signal.reason`, without
+    // sending anything.
     const id = this.#nextId++;
+    // TODO: Create the promise with `Promise.withResolvers`.
     let resolve: (result: string) => void;
     const promise = new Promise<string>((res) => {
       resolve = res;
     });
+    // TODO: When `signal` aborts, forget the call and reject with `signal.reason`.
     this.#pending.set(id, resolve);
     this.#send({ id, method });
     return promise;
@@ -119,9 +121,15 @@ test("rejects with the reason given to abort()", async () => {
 
 test("doesn't even send a call whose signal has already aborted", async () => {
   const { client, sent } = connect();
-  await assert.rejects(within(client.call("thumbnail", AbortSignal.abort())), {
-    name: "AbortError",
-  });
-  assert.deepEqual(sent, []);
+  let call: Promise<string>;
+  try {
+    call = client.call("thumbnail", AbortSignal.abort());
+  } catch {
+    // Code that gets a promise handles failures with `await` or `.catch()`, so a function that
+    // returns a promise must report every failure through it, even one known before it starts.
+    assert.fail("`call` threw instead of returning a rejected promise");
+  }
+  assert.deepEqual(sent, [], "the call was sent although its signal had already aborted");
+  await assert.rejects(within(call), { name: "AbortError" });
   assert.equal(client.pendingCount, 0);
 });

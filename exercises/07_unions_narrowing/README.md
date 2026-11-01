@@ -22,5 +22,5 @@ variables that can still change. Copy the value into a `const` first.
 - [Union types](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#union-types)
 - [Narrowing](https://www.typescriptlang.org/docs/handbook/2/narrowing.html)
 - [Literal types](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#literal-types)
-- [Preserved narrowing in closures (TypeScript 5.4)](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-4.html)
+- [Preserved narrowing in closures (TypeScript 5.4)](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-4.html#preserved-narrowing-in-closures-following-last-assignments)
 - [`Array.isArray()` on MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/isArray)

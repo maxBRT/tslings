@@ -29,31 +29,28 @@ function monthlyPriceCents(plan: Plan): number {
   return 4900;
 }
 
-// The pricing page lists the plans from the most expensive to the cheapest. The prices
-// are passed in, because a promotion can change them.
-function pricingPageOrder(priceCents: (plan: Plan) => number): Plan[] {
-  return PLANS.sort((a, b) => priceCents(b) - priceCents(a));
+// One line per plan on the signup form.
+function signupOptions(): string[] {
+  return PLANS.map((plan) => `${plan}: $${monthlyPriceCents(plan) / 100}/month`);
 }
+
+// Accounts created without picking a plan start on this one.
+const DEFAULT_PLAN: Plan = "starter";
 
 // Don't change the tests below.
 
 test("prices", () => {
   assert.equal(monthlyPriceCents("free"), 0);
+  assert.equal(monthlyPriceCents("pro"), 1200);
   assert.equal(monthlyPriceCents("team"), 4900);
 });
 
-test("the pricing page starts with the most expensive plan", () => {
-  assert.deepEqual(pricingPageOrder(monthlyPriceCents), ["team", "pro", "free"]);
+test("the signup form lists every plan, in order", () => {
+  assert.deepEqual(signupOptions(), ["free: $0/month", "pro: $12/month", "team: $49/month"]);
 });
 
-test("a promotion can change the order", () => {
-  const teamPromo = (plan: Plan) => (plan === "team" ? 900 : monthlyPriceCents(plan));
-  assert.deepEqual(pricingPageOrder(teamPromo), ["pro", "team", "free"]);
-});
-
-test("the signup form keeps its order", () => {
-  pricingPageOrder(monthlyPriceCents);
-  assert.deepEqual(PLANS, ["free", "pro", "team"]);
+test("new accounts start on the free plan", () => {
+  assert.equal(monthlyPriceCents(DEFAULT_PLAN), 0);
 });
 
 type _tests = [

@@ -8,7 +8,7 @@
 import { readFileSync } from "node:fs";
 import { styleText } from "node:util";
 import type { CheckOptions, Checker } from "./checker.ts";
-import { renderProblems } from "./render.ts";
+import { isLibraryFile, renderProblems } from "./render.ts";
 import { runFile, type RunResult } from "./runner.ts";
 
 export interface ExerciseRunOptions extends CheckOptions {
@@ -38,11 +38,12 @@ export async function runExerciseFile(
     const sources = new Map<string, string>();
     for (const problem of problems) {
       for (const path of [problem.file, ...problem.related.map((related) => related.file)]) {
-        if (path !== "" && !sources.has(path)) {
+        // Library files (lib.d.ts…) are shown by name only.
+        if (path !== "" && !sources.has(path) && !isLibraryFile(path)) {
           try {
             sources.set(path, readFileSync(path, "utf8"));
           } catch {
-            // Files outside the project (lib.d.ts…) are shown without a code frame.
+            // A file deleted since the check is shown without a code frame.
           }
         }
       }

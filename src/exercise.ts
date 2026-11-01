@@ -101,18 +101,15 @@ export class ExerciseRunner {
       return { success: false, output: `${paint(["bold", "red"], "error", color)}: the file ${file} doesn't exist\n` };
     }
 
-    const checker = this.#lazyChecker;
     const base = file.startsWith("solutions/") ? "solutions" : "exercises";
-    const extraFiles = extraFilePaths(base, exercise).map((extra) => resolve(this.#root, extra));
-    // The checker re-reads the checked file; imported sibling modules may have changed too.
-    if (extraFiles.length > 0) checker.invalidate(extraFiles);
-
-    const result = await runExerciseFile(checker, path, {
+    const result = await runExerciseFile(this.#lazyChecker, path, {
       test: exercise.test,
       cwd: this.#root,
       color,
       strictLint,
       allowLints: exercise.allowLints,
+      // Imported sibling modules may have changed too.
+      extraFiles: extraFilePaths(base, exercise).map((extra) => resolve(this.#root, extra)),
       notes: exercise.errorNotes,
     });
     return { success: result.success, output: result.output };

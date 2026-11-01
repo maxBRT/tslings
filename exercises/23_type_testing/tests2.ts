@@ -50,6 +50,12 @@ test("keeps only the tags that are strings", () => {
   assert.deepEqual(parseDeploySettings("{}").tags, []);
 });
 
+test("an empty config file gets the defaults", () => {
+  const defaults = { region: "eu-west-1", replicas: 1, tags: [] };
+  assert.deepEqual(parseDeploySettings("{}"), defaults);
+  assert.deepEqual(parseDeploySettings("null"), defaults);
+});
+
 // One type test per comment in `_tests`.
 type _count = Expect<Equal<_tests["length"], 3>>;
 

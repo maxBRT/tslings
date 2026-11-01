@@ -217,6 +217,24 @@ describe("official exercises", () => {
     assert.equal(readFileSync(file, "utf8"), original);
   });
 
+  test("extra files are restored before each check, so editing them can't solve an exercise", () => {
+    const main = fakePackage();
+    const dir = temporaryDir();
+    cli(["init", "--no-install"], { cwd: dir, main });
+    const tslings = join(dir, "tslings");
+    const shapes = join(tslings, "exercises", "01_basics", "shapes.ts");
+    const original = readFileSync(shapes, "utf8");
+
+    writeFileSync(shapes, original.replace("readonly side: number;", "readonly side: string;"));
+    const run = cli(["run", "basics1"], { cwd: tslings, main });
+    assert.equal(run.status, 1, run.stdout);
+    assert.match(run.stdout, /note: exercises\/01_basics\/shapes\.ts is provided by tslings and was restored\. Make your changes in exercises\/01_basics\/basics1\.ts\./);
+    assert.equal(readFileSync(shapes, "utf8"), original);
+
+    // Nothing to restore, nothing to say.
+    assert.doesNotMatch(cli(["run", "basics1"], { cwd: tslings, main }).stdout, /was restored/);
+  });
+
   test("check-all restores deleted files and finds the first pending exercise", () => {
     const main = fakePackage();
     const dir = temporaryDir();
@@ -296,6 +314,26 @@ describe("dev", () => {
     info("skip_check_unsolved = true\n");
     writeFileSync(join(project, "exercises", "stray.ts"), "export {};\n");
     assert.match(cli(["dev", "check"], { cwd: project }).stderr, /Found the file `exercises\/stray\.ts`/);
+  });
+
+  test("dev check wants both copies of an extra file to be the same", () => {
+    const dir = temporaryDir();
+    cli(["dev", "new", "project", "--no-git"], { cwd: dir });
+    const project = join(dir, "project");
+    writeFileSync(join(project, "info.toml"), 'format_version = 1\n\n[[exercises]]\nname = "area"\ntest = false\nextra_files = ["units.ts"]\nhint = "h"\n');
+    const exercise = (value: string): string =>
+      `import { unit } from "./units.ts";\n\n// TODO: Make it a number.\nconst area: number = ${value};\nconsole.log(area, unit);\n`;
+    writeFileSync(join(project, "exercises", "area.ts"), exercise('"1"'));
+    writeFileSync(join(project, "solutions", "area.ts"), exercise("1"));
+    writeFileSync(join(project, "exercises", "units.ts"), 'export const unit = "m2";\n');
+    writeFileSync(join(project, "solutions", "units.ts"), 'export const unit = "m2";\n');
+    const same = cli(["dev", "check"], { cwd: project });
+    assert.equal(same.status, 0, same.stderr + same.stdout);
+
+    writeFileSync(join(project, "solutions", "units.ts"), 'export const unit = "sq m";\n');
+    const different = cli(["dev", "check"], { cwd: project });
+    assert.equal(different.status, 1);
+    assert.match(different.stderr, /The extra file `exercises\/units\.ts` of the exercise `area` differs from `solutions\/units\.ts`/);
   });
 
   test("dev update keeps package.json and type-assert.ts in sync", () => {

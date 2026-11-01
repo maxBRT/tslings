@@ -1,5 +1,6 @@
+// Provided by tslings and restored before each check, so don't edit this file.
 // A tiny HTTP framework, written like a library you would install from npm. `augment1.ts` uses
-// it. Don't edit this file: the point of the exercise is to extend its types from the outside.
+// it. The point of the exercise is to extend its types from the outside.
 
 export interface HttpRequest {
   readonly method: string;

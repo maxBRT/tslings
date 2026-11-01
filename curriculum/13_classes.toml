@@ -9,7 +9,7 @@ an initializer for values every instance starts with.
 https://www.typescriptlang.org/docs/handbook/2/classes.html#fields"""
 
 [exercises.error_notes]
-TS2564 = "This field may still be `undefined` when the constructor finishes. Assign it in the constructor if the value comes from a parameter, or give it an initial value where it's declared. (Writing `field!: type` would silence this error, and crash at runtime instead.)"
+TS2564 = "This field may still be `undefined` when the constructor finishes. Assign it in the constructor if the value comes from a parameter, or give it an initial value where it's declared. (`field!: type` would silence this error and crash at runtime instead, which is why tslings rejects it.)"
 TS2344 = "The type test checks that `maxRequests` and `windowMs` are `readonly`: they're set once, in the constructor, and never change."
 
 [[exercises]]
@@ -67,8 +67,8 @@ https://www.typescriptlang.org/docs/handbook/enums.html#objects-vs-enums"""
 
 [exercises.error_notes]
 TS1294 = "`enum` generates a JavaScript object at compile time, so Node can't run it by erasing types. Replace it with a plain object marked `as const`, and a type of the same name derived from it."
-TS2345 = "This is the other reason teams avoid enums: a string enum only accepts its own members (`LogLevel.Debug`), not the string `\"debug\"`, even though that's its value. A union of string literals accepts both."
-TS2344 = "The type tests check that the type `LogLevel` is the union of the four strings, and that `LogLevel.Warn` has the literal type `\"warn\"` (which is what `as const` gives you)."
+TS2345 = "This is the other reason teams avoid enums: a string enum only accepts its own members (`Priority.High`), not the string `\"high\"`, even though that's its value. A union of string literals accepts both."
+TS2344 = "The type tests check that the type `Priority` is the union of the four strings, and that `Priority.High` has the literal type `\"high\"` (which is what `as const` gives you)."
 
 [[exercises]]
 name = "classes6"
@@ -82,7 +82,7 @@ https://www.typescriptlang.org/docs/handbook/2/classes.html#this-types"""
 [exercises.error_notes]
 TS2315 = "`Repository` has no type parameter yet, so `Repository<Product>` doesn't mean anything. Declare one after the class name, like for a generic function. Most of the other errors in this file come from this one."
 TS2558 = "`Repository` has no type parameter yet, so it can't take a type argument. Declare one after the class name."
-TS2339 = "Several errors in this file come from the first one: fix `Repository` first. Then, if `T` has no `id`: TypeScript only knows what a constraint promises, so constrain `T` to entities. If `inStock` or `byEmail` is missing after `.add(...)`: `add` returns a plain `Repository`, which doesn't have the subclass's methods. The return type `this` keeps the exact type of the object."
+TS2339 = "Look at which property is missing. `all` on a subclass: `Repository` isn't generic yet, so the subclass can't extend `Repository<...>`; fix `Repository` first. `name` on `Entity`: the methods still use `Entity`, so use the type parameter instead. `id` on `T`: TypeScript only knows what a constraint promises, so constrain `T` to entities. `inStock` or `byEmail` after `.add(...)`: `add` returns a plain `Repository`, which doesn't have the subclass's methods; the return type `this` keeps the exact type of the object."
 TS7006 = "This one comes from the first error: the subclass can't extend `Repository<...>` yet, so `this.all()` has no known type. Fix `Repository` first."
 TS2351 = "This one comes from the first error: the subclass can't extend `Repository<...>` yet. Fix `Repository` first."
 TS2353 = "This one comes from the first error: until `Repository` is generic, it only knows about `Entity`, which has no `email`. Fix `Repository` first."

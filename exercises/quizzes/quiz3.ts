@@ -58,7 +58,6 @@ interface Book {
   title: string;
   author: string;
   year: number;
-  tags: readonly string[];
 }
 
 // TODO: What a client sends to create a book: a Book without its `id`.
@@ -70,8 +69,6 @@ type NewBook = unknown;
 //   "title must be a non-empty string"
 //   "author must be a non-empty string"
 //   "year must be an integer"
-//   "tags must be an array of strings"
-// `tags` may be left out of the body: it then defaults to an empty list.
 // The NewBook holds only its own fields, never extra ones from the body.
 function parseNewBook(body: unknown): Result<NewBook, string> {
   throw new Error("Not implemented yet");
@@ -84,21 +81,18 @@ const dune: Book = {
   title: "Dune",
   author: "Frank Herbert",
   year: 1965,
-  tags: ["sci-fi"],
 };
 const earthsea: Book = {
   id: "b2",
   title: "A Wizard of Earthsea",
   author: "Ursula K. Le Guin",
   year: 1968,
-  tags: ["fantasy"],
 };
 const dispossessed: Book = {
   id: "b3",
   title: "The Dispossessed",
   author: "Ursula K. Le Guin",
   year: 1974,
-  tags: ["sci-fi"],
 };
 
 function bookTable(): Table<Book> {
@@ -119,12 +113,12 @@ describe("Table", () => {
 
   test("updates some fields of a record", () => {
     const books = bookTable();
-    const result = books.update("b2", { year: 1969, tags: ["fantasy", "classic"] });
+    const result = books.update("b2", { title: "A Wizard of Earthsea (revised)", year: 1969 });
     type _test = Expect<Equal<typeof result, Result<Book, NotFoundError>>>;
     assert.ok(result.ok);
     assert.equal(result.value.year, 1969);
-    assert.equal(result.value.title, "A Wizard of Earthsea");
-    assert.deepEqual(books.get("b2")?.tags, ["fantasy", "classic"]);
+    assert.equal(result.value.author, "Ursula K. Le Guin");
+    assert.equal(books.get("b2")?.title, "A Wizard of Earthsea (revised)");
     assert.equal(earthsea.year, 1968, "the original object must not change");
   });
 
@@ -164,11 +158,11 @@ describe("Table", () => {
 describe("parseNewBook", () => {
   test("accepts a valid body", () => {
     const body: unknown = JSON.parse(
-      '{"title":"Kindred","author":"Octavia E. Butler","year":1979,"tags":["sci-fi"]}',
+      '{"title":"Kindred","author":"Octavia E. Butler","year":1979}',
     );
     assert.deepEqual(parseNewBook(body), {
       ok: true,
-      value: { title: "Kindred", author: "Octavia E. Butler", year: 1979, tags: ["sci-fi"] },
+      value: { title: "Kindred", author: "Octavia E. Butler", year: 1979 },
     });
   });
 
@@ -179,15 +173,7 @@ describe("parseNewBook", () => {
     );
     assert.deepEqual(parseNewBook(body), {
       ok: true,
-      value: { title: "Kindred", author: "Octavia E. Butler", year: 1979, tags: [] },
-    });
-  });
-
-  test("tags default to an empty list", () => {
-    const body: unknown = JSON.parse('{"title":"Solaris","author":"Stanisław Lem","year":1961}');
-    assert.deepEqual(parseNewBook(body), {
-      ok: true,
-      value: { title: "Solaris", author: "Stanisław Lem", year: 1961, tags: [] },
+      value: { title: "Kindred", author: "Octavia E. Butler", year: 1979 },
     });
   });
 
@@ -201,8 +187,6 @@ describe("parseNewBook", () => {
       [{ ...valid, author: 42 }, "author must be a non-empty string"],
       [{ ...valid, year: "1979" }, "year must be an integer"],
       [{ ...valid, year: 1979.5 }, "year must be an integer"],
-      [{ ...valid, tags: ["sci-fi", 7] }, "tags must be an array of strings"],
-      [{ ...valid, tags: "sci-fi" }, "tags must be an array of strings"],
     ];
     for (const [body, error] of failures) {
       assert.deepEqual(parseNewBook(body), { ok: false, error });
@@ -212,6 +196,6 @@ describe("parseNewBook", () => {
 
 // Type tests: each line only compiles when the two types are exactly the same.
 type _tests = [
-  Expect<Equal<NewBook, { title: string; author: string; year: number; tags: readonly string[] }>>,
+  Expect<Equal<NewBook, { title: string; author: string; year: number }>>,
   Expect<Equal<Parameters<Table<Book>["update"]>[1], Partial<Omit<Book, "id">>>>,
 ];

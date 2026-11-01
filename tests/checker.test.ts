@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { after, before, describe, test } from "node:test";
-import { Checker, type CheckOptions } from "../src/checker.ts";
+import { Checker, type CheckOptions, type Problem } from "../src/checker.ts";
 import { writeCheckerConfig } from "../src/workspace.ts";
 import { temporaryDir } from "./helpers.ts";
 
@@ -21,12 +21,22 @@ before(() => {
 
 after(() => checker?.close());
 
-/** Check a snippet and return `severity:code` for each problem. */
-function check(source: string, options: CheckOptions = {}): string[] {
+/** Check a snippet and return its problems. */
+function problems(source: string, options: CheckOptions = {}): readonly Problem[] {
   if (checker === undefined) throw new Error("The checker isn't started");
   const file = join(dir, "exercises", `snippet${counter++}.ts`);
   writeFileSync(file, source);
-  return checker.check(file, options).problems.map((problem) => `${problem.severity}:${problem.code}`);
+  return checker.check(file, options).problems;
+}
+
+/** Check a snippet and return `severity:code` for each problem. */
+function check(source: string, options: CheckOptions = {}): string[] {
+  return problems(source, options).map((problem) => `${problem.severity}:${problem.code}`);
+}
+
+/** The text each problem points at. */
+function spans(source: string, options: CheckOptions = {}): string[] {
+  return problems(source, options).map((problem) => `${problem.code}: ${source.slice(problem.start, problem.end)}`);
 }
 
 describe("type errors", () => {
@@ -55,6 +65,15 @@ describe("cheat rules are always errors", () => {
     assert.deepEqual(check("const names = new Map<string, string>();\nexport const name = names.get('a')!;\n"), ["error:no-non-null-assertion"]);
   });
 
+  test("no-non-null-assertion also covers definite assignment assertions", () => {
+    assert.deepEqual(spans("let total!: number;\nexport const read = (): number => total;\n"), ["no-non-null-assertion: total!"]);
+    const field = problems("export class User {\n  name!: string;\n  nickname?: string;\n}\n");
+    assert.deepEqual(
+      field.map((problem) => [problem.code, problem.message]),
+      [["no-non-null-assertion", "definite assignment assertions (`name!: Type`) are not allowed in tslings exercises"]],
+    );
+  });
+
   test("no-ts-comment, not inside strings", () => {
     assert.deepEqual(check("// @ts-ignore\nexport const n: number = 1;\n"), ["error:no-ts-comment"]);
     assert.deepEqual(check("/* @ts-expect-error */\nexport const n: string = 1;\n"), ["error:no-ts-comment"]);
@@ -66,10 +85,121 @@ describe("cheat rules are always errors", () => {
   });
 });
 
+describe("no-unsafe-any: `any` that nobody wrote", () => {
+  test("`JSON.parse` returned from a typed function", () => {
+    assert.deepEqual(
+      spans("export function clone<T>(value: T): T {\n  return JSON.parse(JSON.stringify(value));\n}\n"),
+      ["no-unsafe-any: JSON.parse(JSON.stringify(value))"],
+    );
+  });
+
+  test("into a variable without a type annotation", () => {
+    assert.deepEqual(spans('export const settings = JSON.parse("{}");\n'), ['no-unsafe-any: JSON.parse("{}")']);
+    // The idiom: `unknown`, then narrow.
+    assert.deepEqual(check('export const settings: unknown = JSON.parse("{}");\n'), []);
+  });
+
+  test("collections of `any`", () => {
+    const [problem, ...rest] = problems("export const counts = new Map();\n");
+    assert.equal(rest.length, 0);
+    assert.equal(problem?.code, "no-unsafe-any");
+    assert.equal(problem.message, "this value has type `Map<any, any>`, which switches type checking off");
+    assert.deepEqual(check("export const counts = new Map<string, number>();\n"), []);
+    assert.deepEqual(check("export const counts: Map<string, number> = new Map();\n"), []);
+    assert.deepEqual(check("export function counts(): Map<string, number> {\n  return new Map();\n}\n"), []);
+  });
+
+  test("arguments, unless the parameter is `unknown` or `any`", () => {
+    const source = 'import assert from "node:assert/strict";\n' +
+      "function double(n: number): number {\n  return n * 2;\n}\n" +
+      'export const twice = double(JSON.parse("2"));\n' +
+      'assert.equal(JSON.parse("2"), 2);\n' +
+      'console.log(JSON.parse("2"));\n';
+    assert.deepEqual(spans(source), ['no-unsafe-any: JSON.parse("2")']);
+    assert.equal(problems(source)[0]?.start, source.indexOf('JSON.parse("2")'));
+  });
+
+  test("promises of `any`, and `any[]` from `Array.isArray`", () => {
+    const load = (type: string): string =>
+      `export function load(text: Promise<string>): Promise<${type}> {\n  return text.then(JSON.parse);\n}\n`;
+    assert.deepEqual(check(load("{ id: string }")), ["error:no-unsafe-any"]);
+    assert.deepEqual(check(load("unknown")), []);
+    assert.deepEqual(
+      spans('export function first(value: unknown): string {\n  return Array.isArray(value) ? value[0] : "";\n}\n'),
+      ['no-unsafe-any: Array.isArray(value) ? value[0] : ""'],
+    );
+  });
+
+  test("a value is reported where it comes from, not at each use", () => {
+    const source =
+      'function show(text: string): string {\n  return text;\n}\nconst raw = JSON.parse("{}");\nshow(raw.name);\n' +
+      'export function size(): number {\n  return raw.size > 0 ? raw.size : 16;\n}\n';
+    assert.deepEqual(spans(source), ['no-unsafe-any: JSON.parse("{}")']);
+  });
+
+  test("waits until type errors are fixed: they make `any` on their own", () => {
+    assert.deepEqual(check("export function shout(text) {\n  return text.toUpperCase();\n}\n"), ["error:TS7006"]);
+  });
+
+  test("an exercise can allow it", () => {
+    assert.deepEqual(check('export const settings = JSON.parse("{}");\n', { allowLints: ["no-unsafe-any"] }), []);
+  });
+});
+
+describe("failing type tests show both types", () => {
+  const helpers =
+    "type Equal<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2 ? true : false;\n" +
+    "type NotEqual<X, Y> = true extends Equal<X, Y> ? false : true;\n" +
+    "type Expect<T extends true> = T;\n";
+
+  test("Expect<Equal<found, expected>>", () => {
+    const source = `${helpers}type Args<T> = T extends undefined ? [payload: T] : [];\ntype _tests = [Expect<Equal<Args<undefined>, []>>];\n`;
+    const [problem, ...rest] = problems(source);
+    assert.equal(rest.length, 0);
+    assert.equal(problem?.code, "TS2344");
+    // The alias is expanded: `Args<undefined>` wouldn't tell what's wrong.
+    assert.deepEqual(problem.types, [
+      { label: "expected", type: "[]" },
+      { label: "found", type: "[payload: undefined]" },
+    ]);
+  });
+
+  test("Expect<NotEqual<A, B>>", () => {
+    const [problem] = problems(`${helpers}type _test = Expect<NotEqual<{ a: 1 }, { a: 1 }>>;\n`);
+    assert.deepEqual(problem?.types, [{ label: "both types are", type: "{ a: 1; }" }]);
+  });
+
+  test("other constraint errors are left alone", () => {
+    const [problem] = problems("type Id<T extends string> = T;\nexport type Five = Id<5>;\n");
+    assert.equal(problem?.code, "TS2344");
+    assert.equal(problem.types, undefined);
+  });
+});
+
+describe("extra files", () => {
+  test("are re-read from disk with the exercise", () => {
+    if (checker === undefined) throw new Error("The checker isn't started");
+    const module = join(dir, "exercises", "rates.ts");
+    const exercise = join(dir, "exercises", "prices.ts");
+    writeFileSync(module, "export const rate: number = 2;\n");
+    writeFileSync(exercise, 'import { rate } from "./rates.ts";\nexport const price: number = 10 * rate;\n');
+    assert.deepEqual(checker.check(exercise, { extraFiles: [module] }).problems, []);
+
+    writeFileSync(module, 'export const rate: string = "2";\n');
+    const codes = checker.check(exercise, { extraFiles: [module] }).problems.map((problem) => problem.code);
+    assert.deepEqual(codes, ["TS2363"]);
+  });
+});
+
 describe("style rules are warnings, errors with strict lint", () => {
   test("no-var", () => {
     assert.deepEqual(check("var count = 1;\ncount++;\nexport { count };\n"), ["warning:no-var"]);
     assert.deepEqual(check("var count = 1;\ncount++;\nexport { count };\n", { strictLint: true }), ["error:no-var"]);
+  });
+
+  test("no-var leaves ambient declarations alone: `var` is how globals are typed", () => {
+    assert.deepEqual(check("declare global {\n  var requestCount: number;\n}\nexport {};\n", { strictLint: true }), []);
+    assert.deepEqual(check("declare var buildId: string;\nexport const id = buildId;\n", { strictLint: true }), []);
   });
 
   test("eqeqeq, except `== null`", () => {

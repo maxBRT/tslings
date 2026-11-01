@@ -13,23 +13,24 @@ import type { Equal, Expect } from "#type-assert";
 
 type FieldState<V> = { value: V; error?: string };
 
-type CheckoutForm = {
+// The sign-up form of a conference.
+type RegistrationForm = {
   email: string;
-  quantity: number;
-  giftWrap: boolean;
-  couponCode?: string;
+  seats: number;
+  needsParking: boolean;
+  badgeName?: string; // the name to print on the badge, if the attendee wants one
 };
 
 // TODO: One `FieldState` per field of `T`, using that field's own type, and
 // required even when the field itself is optional.
 type FormState<T> = Record<keyof T, FieldState<unknown>>;
 
-function initialState(values: CheckoutForm): FormState<CheckoutForm> {
+function initialState(values: RegistrationForm): FormState<RegistrationForm> {
   return {
     email: { value: values.email },
-    quantity: { value: values.quantity },
-    giftWrap: { value: values.giftWrap },
-    couponCode: { value: values.couponCode },
+    seats: { value: values.seats },
+    needsParking: { value: values.needsParking },
+    badgeName: { value: values.badgeName },
   };
 }
 
@@ -38,17 +39,17 @@ function check<V>(field: FieldState<V>, error: string | undefined): FieldState<V
   return error === undefined ? { value: field.value } : { value: field.value, error };
 }
 
-function validate(state: FormState<CheckoutForm>): FormState<CheckoutForm> {
-  const { email, quantity, couponCode } = state;
+function validate(state: FormState<RegistrationForm>): FormState<RegistrationForm> {
+  const { email, seats, badgeName } = state;
   return {
     ...state,
     email: check(email, email.value.includes("@") ? undefined : "Enter a valid email"),
-    quantity: check(quantity, quantity.value >= 1 ? undefined : "Order at least one item"),
-    couponCode: check(
-      couponCode,
-      couponCode.value === undefined || /^[A-Z0-9]{8}$/.test(couponCode.value)
+    seats: check(seats, seats.value >= 1 ? undefined : "Book at least one seat"),
+    badgeName: check(
+      badgeName,
+      badgeName.value === undefined || /^[\p{L} -]{1,20}$/u.test(badgeName.value)
         ? undefined
-        : "Coupon codes are 8 letters or digits",
+        : "Badge names are up to 20 letters, spaces or hyphens",
     ),
   };
 }
@@ -56,31 +57,36 @@ function validate(state: FormState<CheckoutForm>): FormState<CheckoutForm> {
 // Don't change the tests below.
 
 test("valid values have no errors", () => {
-  const state = validate(initialState({ email: "ada@example.com", quantity: 2, giftWrap: true }));
+  const state = validate(initialState({ email: "ada@example.com", seats: 2, needsParking: true }));
   assert.equal(state.email.error, undefined);
-  assert.equal(state.quantity.error, undefined);
-  assert.equal(state.couponCode.error, undefined);
-  assert.equal(state.giftWrap.value, true);
+  assert.equal(state.seats.error, undefined);
+  assert.equal(state.badgeName.error, undefined);
+  assert.equal(state.needsParking.value, true);
 });
 
 test("invalid values get an error message", () => {
   const state = validate(
-    initialState({ email: "ada", quantity: 0, giftWrap: false, couponCode: "free" }),
+    initialState({
+      email: "ada",
+      seats: 0,
+      needsParking: false,
+      badgeName: "Augusta Ada King, Countess of Lovelace",
+    }),
   );
   assert.equal(state.email.error, "Enter a valid email");
-  assert.equal(state.quantity.error, "Order at least one item");
-  assert.equal(state.couponCode.error, "Coupon codes are 8 letters or digits");
+  assert.equal(state.seats.error, "Book at least one seat");
+  assert.equal(state.badgeName.error, "Badge names are up to 20 letters, spaces or hyphens");
 });
 
 type _tests = [
   Expect<
     Equal<
-      FormState<CheckoutForm>,
+      FormState<RegistrationForm>,
       {
         email: FieldState<string>;
-        quantity: FieldState<number>;
-        giftWrap: FieldState<boolean>;
-        couponCode: FieldState<string | undefined>;
+        seats: FieldState<number>;
+        needsParking: FieldState<boolean>;
+        badgeName: FieldState<string | undefined>;
       }
     >
   >,

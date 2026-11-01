@@ -1,7 +1,7 @@
 // The official exercise files shipped in the tslings package, and how they get
 // to the learner's directory. (rustlings embeds them in its binary instead.)
 
-import { copyFileSync, existsSync, mkdirSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { extraFilePaths } from "./exercise.ts";
 import { exerciseDir, type ExerciseInfo, exercisePath, solutionPath } from "./info-file.ts";
@@ -45,10 +45,38 @@ export function writeExerciseToDisk(exercise: ExerciseInfo): void {
   for (const extra of extraFilePaths("exercises", exercise)) copyFromPackage(extra);
 }
 
-/** Restore an exercise's missing files (deleted by the learner, or added by a tslings update). */
-export function restoreMissingFiles(exercise: ExerciseInfo): void {
-  for (const path of [exercisePath(exercise), ...extraFilePaths("exercises", exercise)]) {
-    if (!existsSync(path)) copyFromPackage(path);
+/**
+ * Before each check: bring the exercise file back if it's missing (deleted by
+ * the learner, or added by a tslings update), and rewrite its extra files from
+ * the package, like rustlings does with its input files. tslings provides the
+ * extra files: editing them must not make an exercise pass. Returns the extra
+ * files that had been edited.
+ */
+export function restoreExerciseFiles(exercise: ExerciseInfo): string[] {
+  const path = exercisePath(exercise);
+  if (!existsSync(path)) copyFromPackage(path);
+
+  const edited: string[] = [];
+  for (const extra of extraFilePaths("exercises", exercise)) {
+    const original = readFileSync(packageFile(extra));
+    const current = readIfExists(extra);
+    if (current?.equals(original) === true) continue;
+    mkdirSync(dirname(extra), { recursive: true });
+    try {
+      writeFileSync(extra, original);
+    } catch (error) {
+      throw new Error(`Failed to restore the file ${extra}`, { cause: error });
+    }
+    if (current !== undefined) edited.push(extra);
+  }
+  return edited;
+}
+
+function readIfExists(path: string): Buffer | undefined {
+  try {
+    return readFileSync(path);
+  } catch {
+    return undefined;
   }
 }
 

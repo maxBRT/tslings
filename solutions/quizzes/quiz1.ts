@@ -56,6 +56,7 @@ function stockValue(
   // Annotating the starting object with `Record<Category, number>` makes
   // TypeScript check that no category is forgotten.
   const totals: Record<Category, number> = { tools: 0, garden: 0, kitchen: 0 };
+  // No `discontinued` filter here: those units are still worth something.
   for (const item of catalog) {
     totals[item.category] += item.priceCents * (stock.get(item.sku) ?? 0);
   }

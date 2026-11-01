@@ -19,18 +19,21 @@ type DeploySettings = { region: Region; replicas: number; tags: string[] };
 // Reads the deploy settings from a JSON config file.
 //
 // The return type annotation is a contract: every field is checked against it, and the ternary
-// keeps its literal types instead of widening to `string`. Annotating `raw` with `unknown`
-// fields stops `any` from flowing out of `JSON.parse`: each value has to be checked before use.
-// (The annotation still trusts the file to hold an object; a `typeof raw === "object"` check
-// would close that gap too.)
+// keeps its literal types instead of widening to `string`. Storing the result of `JSON.parse`
+// in an `unknown` stops its `any` at the source, as in chapter 10. The file may hold `null` or
+// a number, so `raw` is narrowed to an object first; each field stays `unknown` until checked.
 function parseDeploySettings(json: string): DeploySettings {
-  const raw: { region?: unknown; replicas?: unknown; tags?: unknown } = JSON.parse(json);
+  const raw: unknown = JSON.parse(json);
+  const fields: { region?: unknown; replicas?: unknown; tags?: unknown } =
+    typeof raw === "object" && raw !== null ? raw : {};
   return {
-    region: raw.region === "us" ? "us-east-1" : "eu-west-1",
-    replicas: Number(raw.replicas ?? 1),
+    region: fields.region === "us" ? "us-east-1" : "eu-west-1",
+    replicas: Number(fields.replicas ?? 1),
     // `filter` infers the type predicate `tag is string` from the callback (TypeScript 5.5),
     // so the result is a `string[]`, not an `any[]`.
-    tags: Array.isArray(raw.tags) ? raw.tags.filter((tag: unknown) => typeof tag === "string") : [],
+    tags: Array.isArray(fields.tags)
+      ? fields.tags.filter((tag: unknown) => typeof tag === "string")
+      : [],
   };
 }
 
@@ -57,6 +60,12 @@ test("keeps only the tags that are strings", () => {
   const settings = parseDeploySettings('{ "tags": ["web", 42, "canary"] }');
   assert.deepEqual(settings.tags, ["web", "canary"]);
   assert.deepEqual(parseDeploySettings("{}").tags, []);
+});
+
+test("an empty config file gets the defaults", () => {
+  const defaults = { region: "eu-west-1", replicas: 1, tags: [] };
+  assert.deepEqual(parseDeploySettings("{}"), defaults);
+  assert.deepEqual(parseDeploySettings("null"), defaults);
 });
 
 // One type test per comment in `_tests`.

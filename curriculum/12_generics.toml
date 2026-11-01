@@ -90,6 +90,7 @@ https://www.typescriptlang.org/docs/handbook/2/functions.html#generic-functions"
 [exercises.error_notes]
 TS2345 = "`pipe` says `first` must accept `unknown`, any value at all, but the function passed here only accepts one kind of value (a `string`, a `Post`). Rather than accept anything, `pipe` should take its input type from `first`: that's a job for a type parameter."
 TS18046 = "`pipe` hands `unknown` to `second`, so TypeScript knows nothing about its parameter. With type parameters, `second`'s input type comes from what `first` returns."
+TS2344 = "The type tests check the function that `pipe` builds: `slugify` must be `(input: string) => string`. As long as `pipe` is written with `unknown`, it can only return `(input: unknown) => unknown`, whatever you pass it. The fix is in `pipe`'s signature, not in the tests."
 
 [[exercises]]
 name = "generics7"

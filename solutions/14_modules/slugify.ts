@@ -1,5 +1,6 @@
-// Turns a name into a URL-friendly slug. Shared by the exercises of this chapter; you don't
-// need to edit this file. Like many npm packages, it has a single default export.
+// Provided by tslings and restored before each check, so don't edit this file.
+// Turns a name into a URL-friendly slug, for the exercises of this chapter. Like many npm
+// packages, it has a single default export.
 
 /** `slugify("Café Déjà Vu!")` is `"cafe-deja-vu"`. */
 export default function slugify(text: string): string {

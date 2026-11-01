@@ -1,4 +1,4 @@
-# Arrays and Tuples
+# Arrays and tuples
 
 An array type is written `T[]` (or `Array<T>`): a list of any length where
 every element has the type `T`. A tuple type like `[width: number, height: number]`

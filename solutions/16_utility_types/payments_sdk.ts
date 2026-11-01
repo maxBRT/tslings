@@ -1,6 +1,7 @@
+// Provided by tslings and restored before each check, so don't edit this file.
 // A stand-in for a payments SDK installed from npm. Like many libraries, it
 // exports its functions but not the types of their options or results.
-// Don't change this file: pretend it lives in node_modules.
+// Pretend it lives in node_modules.
 
 let chargeCount = 0;
 

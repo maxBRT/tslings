@@ -9,7 +9,7 @@ static method for that, but it returns a plain `boolean`, so it doesn't narrow o
 https://www.typescriptlang.org/docs/handbook/2/narrowing.html#typeof-type-guards"""
 
 [exercises.error_notes]
-TS18046 = "`stored` came from `JSON.parse`, so it could be anything: `16`, `\"16\"`, `null`, `[16]`. Check `typeof stored` before using it. Deleting the `unknown` annotation would also silence this error, but `stored` would become `any` and the bug would get through to the tests."
+TS18046 = "`stored` came from `JSON.parse`, so it could be anything: `16`, `\"16\"`, `null`, `[16]`. Check `typeof stored` before using it. Deleting the `unknown` annotation is no way out: `stored` would become `any`, which turns type checking off, and tslings rejects it."
 TS2322 = "The function promises to return a `number`, and `stored` is still `unknown` here. Once you've narrowed `stored` with `typeof`, this error goes away too."
 
 [[exercises]]
@@ -57,14 +57,14 @@ TS2344 = "These type tests check the signatures of `assertIsString` and `assertI
 name = "guards3"
 dir = "10_unknown_type_guards"
 hint = """
-Check `body` the way you did in unknown2: object first, then each field with `in` and
-`typeof`, returning `{ ok: false, error }` early. Each early return keeps the narrowing for the
-lines below it. A `string` isn't a `Currency` yet: a small type guard on `CURRENCIES` fixes it
-(`includes` won't accept a plain `string` there). An invalid date string gives a `Date` whose
-`getTime()` is `NaN`.
+Copy the shape of the `id` check for each field: `in` to prove the property is there, `typeof`
+for its type, and an early `return { ok: false, error }` when it's wrong. A `string` isn't a
+`Currency` yet: a small type guard on `CURRENCIES` fixes it. `includes` won't accept a plain
+`string` there, but `some` can compare each entry with it. An invalid date string gives a
+`Date` whose `getTime()` is `NaN`.
 https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/"""
 
 [exercises.error_notes]
-TS18046 = "The webhook body is `unknown`: don't trust it yet. Check that it's an object, then check each field with `in` and `typeof`, before building the `Payment`."
-TS2339 = "`body` is narrowed to `object`, which has no known properties. Check that the property is there with `\"id\" in body`, then check its type."
-TS2322 = "A `string` isn't a `Currency` until you've checked that it is one of `CURRENCIES`. `CURRENCIES.includes(code)` doesn't accept a plain `string`; a small type guard `(code: string): code is Currency` does the job."
+TS2339 = "So far TypeScript only knows that `body` is an object with an `id`. Check the other properties the way the `id` check does: `in` proves the property is there, then `typeof` checks its type."
+TS2322 = "A `string` isn't a `Currency` until you've checked that it is one of `CURRENCIES`. Write a small type guard, `(code: string): code is Currency`, that compares `code` with each entry (`CURRENCIES.some(...)`), and call it before building the payment."
+TS2345 = "If this is `CURRENCIES.includes(...)`: `CURRENCIES` is a tuple of literals (`as const`), so its `includes` only accepts those literals, and a plain `string` is refused. Leave `CURRENCIES` as it is and compare the entries yourself in a type guard: `CURRENCIES.some((currency) => currency === code)` accepts any string, and the guard's `code is Currency` return type turns the result into narrowing. If the argument is still `unknown`, check it with `typeof` first."

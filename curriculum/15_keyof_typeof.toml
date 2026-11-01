@@ -33,20 +33,20 @@ TS7053 = "`MESSAGES` only has the keys `en` and `fr`, but `locale` is typed as a
 name = "keyof3"
 dir = "15_keyof_typeof"
 hint = """
-- `Plan`: `typeof PLANS` is a tuple type. Index it with `number` to get the
-  union of its elements: `(typeof PLANS)[number]`.
+- `ImageFormat`: `typeof IMAGE_FORMATS` is a tuple type. Which index type reads
+  "any element" out of it? The header lists it.
 - `StatusLabel`: index the type of STATUS_LABELS with the union of its own keys.
-- `BillingInterval`: index `Subscription` with "billing", then with "interval",
-  like you would chain property accesses.
+- `Fit`: index `Upload` with "resize", then with "fit", like you would chain
+  property accesses.
 
-Once `BillingInterval` is precise, TypeScript points at a bug in
-`chargesPerYear`. Fix the bug, not the type.
+Once `Fit` is precise, TypeScript points at a bug in `cropsImage`. Fix the
+bug, not the type.
 https://www.typescriptlang.org/docs/handbook/2/indexed-access-types.html"""
 
 [exercises.error_notes]
-TS2322 = "The hand-written `Plan` union doesn't list \"enterprise\", but PLANS does. Derive `Plan` from PLANS with an indexed access type, so the list and the type can't disagree again."
+TS2322 = "The hand-written `ImageFormat` union doesn't list \"avif\", but IMAGE_FORMATS does. Derive `ImageFormat` from IMAGE_FORMATS with an indexed access type, so the list and the type can't disagree again."
 TS2344 = "This type is still `string`, or a hand-written union. Derive it with an indexed access type: `SomeType[\"property\"]`, `SomeTuple[number]` or `SomeType[keyof SomeType]`."
-TS2367 = "Now that `interval` is `\"month\" | \"year\"` instead of `string`, TypeScript can see this comparison is never true. That's the bug the precise type was hiding: fix the string being compared."
+TS2367 = "Now that `fit` is `\"cover\" | \"contain\"` instead of `string`, TypeScript can see this comparison is never true. That's the bug the precise type was hiding: fix the string being compared."
 
 [[exercises]]
 name = "keyof4"

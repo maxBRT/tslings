@@ -1,54 +1,56 @@
 // A last cleanup, the way a code review would go. Each lint here points at a real problem.
 //
 // `prefer-const` flags a `let` that is never reassigned. `const` tells the reader the value
-// won't change, and TypeScript gives it a narrower type: `let size = "M"` is a `string`, while
-// `const size = "M"` is the literal type `"M"`, which fits a `"S" | "M" | "L"` union.
+// won't change, and TypeScript gives it a narrower type: `let shift = "day"` is a `string`,
+// while `const shift = "day"` is the literal type `"day"`, which fits a `Shift` union.
 //
 // `no-non-null-assertion` flags `value!`, which tells TypeScript "this isn't undefined" without
 // checking. When you're wrong, nothing fails at that line: a `NaN` or a crash shows up somewhere
 // else, later. Handle the `undefined` case where it happens instead.
 //
-// TODO: Fix every error. The tests say what should happen with an unknown product.
+// TODO: Fix every error. The tests say what should happen with an unknown project.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-type Size = "S" | "M" | "L";
-type LineItem = { sku: string; size: Size; quantity: number };
+type Shift = "day" | "evening" | "night";
+type TimeEntry = { project: string; shift: Shift; hours: number };
 
-const prices = new Map([
-  ["tee", 1500],
-  ["hoodie", 4500],
+// What each client pays per hour of work on their project.
+const hourlyRates = new Map([
+  ["website", 80],
+  ["mobile-app", 95],
 ]);
-const sizeSurcharge: Record<Size, number> = { S: 0, M: 0, L: 200 };
+// Evening and night hours are paid extra, per hour.
+const shiftBonus: Record<Shift, number> = { day: 0, evening: 10, night: 25 };
 
-function defaultItem(sku: string): LineItem {
-  let size = "M";
-  return { sku, size, quantity: 1 };
+function newEntry(project: string): TimeEntry {
+  let shift = "day";
+  return { project, shift, hours: 8 };
 }
 
-function lineTotal(item: LineItem): number {
-  let unitPrice = prices.get(item.sku)!;
-  return (unitPrice + sizeSurcharge[item.size]) * item.quantity;
+function entryAmount(entry: TimeEntry): number {
+  let rate = hourlyRates.get(entry.project)!;
+  return (rate + shiftBonus[entry.shift]) * entry.hours;
 }
 
-function cartTotal(items: readonly LineItem[]): number {
+function invoiceTotal(entries: readonly TimeEntry[]): number {
   let total = 0;
-  for (let item of items) total += lineTotal(item);
+  for (let entry of entries) total += entryAmount(entry);
   return total;
 }
 
 // Don't change the tests below.
 
-test("new items are medium, one of them", () => {
-  assert.deepEqual(defaultItem("tee"), { sku: "tee", size: "M", quantity: 1 });
+test("a new entry is a full day shift", () => {
+  assert.deepEqual(newEntry("website"), { project: "website", shift: "day", hours: 8 });
 });
 
-test("large sizes cost a bit more", () => {
-  assert.equal(lineTotal({ sku: "tee", size: "L", quantity: 2 }), 3400);
-  assert.equal(cartTotal([defaultItem("tee"), defaultItem("hoodie")]), 6000);
+test("night hours are paid more", () => {
+  assert.equal(entryAmount({ project: "website", shift: "night", hours: 2 }), 210);
+  assert.equal(invoiceTotal([newEntry("website"), newEntry("mobile-app")]), 1400);
 });
 
-test("an unknown product is an error, not NaN", () => {
-  assert.throws(() => lineTotal(defaultItem("socks")), /Unknown product: socks/);
+test("an unknown project is an error, not NaN", () => {
+  assert.throws(() => entryAmount(newEntry("intranet")), /Unknown project: intranet/);
 });

@@ -38,10 +38,12 @@ function resolveOptions(options: ClientOptions): ResolvedOptions {
   };
 }
 
-// Creating an `Intl.NumberFormat` is slow, so we keep one per currency.
-const formatters: Record<string, Intl.NumberFormat> = {};
+type Currency = "EUR" | "USD" | "JPY";
 
-function currencyFormatter(currency: string): Intl.NumberFormat {
+// Creating an `Intl.NumberFormat` is slow, so we keep one per currency.
+const formatters: Partial<Record<Currency, Intl.NumberFormat>> = {};
+
+function currencyFormatter(currency: Currency): Intl.NumberFormat {
   // TODO: Return the cached formatter for `currency`, creating it the first
   // time with `new Intl.NumberFormat("en-US", { style: "currency", currency })`.
   return formatters[currency];

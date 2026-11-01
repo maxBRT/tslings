@@ -4,8 +4,9 @@ dir = "00_intro"
 test = false
 skip_check_unsolved = true
 hint = """
-Enter `n` to move on to the next exercise.
-You might need to press ENTER after typing `n`."""
+This exercise already passes, there's nothing to fix. Change the name passed to
+`welcome`, save the file, and watch the output change.
+Then enter `n` to move on to the next exercise."""
 
 [[exercises]]
 name = "intro2"

@@ -1,7 +1,10 @@
 // APIs return long lists one page at a time: `{ items, nextCursor }`. An async generator
 // turns "fetch a page, yield its items, follow the cursor" into a single stream of items:
 //
-//   async function* allItems(): AsyncGenerator<Item> { ... yield item; ... }
+//   async function* allItems(): AsyncGenerator<Item, void, undefined> { ... yield item; ... }
+//
+// The three type arguments are what it yields, what it returns and what `next()` takes. Write
+// all three: the last two default to `any`.
 //
 // Read it with `for await (const item of allItems())`. Pages are only fetched when the loop
 // asks for more items, so a loop that stops early (`break`, `return`) also stops fetching.

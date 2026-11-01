@@ -13,6 +13,7 @@ https://www.typescriptlang.org/docs/handbook/2/objects.html#intersection-types""
 
 [exercises.error_notes]
 TS2339 = "`Product`, `DigitalProduct` and `CartLine` are still empty object types, so TypeScript doesn't know about any of their properties yet. Describe them as the TODOs say."
+TS2344 = "A type test failed: compare the TODO of the type on the `found` line with the `expected` line (for an interface, `found` only shows its name). `CartLine` must be written with `&`: listing the four properties again gives the same shape, but the type test tells the two spellings apart."
 
 [[exercises]]
 name = "objects2"
@@ -69,5 +70,6 @@ real: decide what a missing flag means and return that.
 https://www.typescriptlang.org/docs/handbook/utility-types.html#recordkeys-type"""
 
 [exercises.error_notes]
-TS2322 = "With `string` keys, any key may be missing, so a read gives `V | undefined`. `GREETINGS` only needs the `Locale` keys: give it a type that lists them, and reads become safe. Flags have open-ended keys: handle the missing case."
+TS2322 = "With `string` keys, any key may be missing, so a read gives `V | undefined`. If this is the `GREETINGS` read: that object only needs the `Locale` keys, so give it a type that lists them, and the read becomes safe. If it's the flags read: their keys really are open-ended, so decide what a missing flag means."
 TS2741 = "`Record<Locale, string>` requires one entry per locale, and this one is missing. Add it to the object; that check is the reason to use a `Record` here."
+TS2344 = "A type test failed: `GREETINGS` must be typed with `Locale` as its keys, `Record<Locale, string>`, instead of `string` keys. That type is what makes TypeScript demand a greeting for every locale."

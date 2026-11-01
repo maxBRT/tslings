@@ -57,11 +57,10 @@ name = "literals2"
 dir = "03_primitives_literals"
 hint = """
 Add `as const` right after the array literal. `Plan` is already derived from `PLANS`.
-`as const` also makes the array `readonly`, which rules out methods that change it in
-place. Arrays have a method that returns a sorted copy instead.
+Once `Plan` is a union, TypeScript checks every value typed `Plan` against the list, and
+one of them isn't in it. The test names tell you which plan it should be.
 https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-4.html#const-assertions"""
 
 [exercises.error_notes]
 TS2344 = "A type test failed: `PLANS` is inferred as `string[]`, so `Plan` is just `string`. Tell TypeScript the array never changes, so it keeps the literal types."
-TS2339 = "`PLANS` is `readonly` now, so methods that modify it in place, like `sort`, don't exist on it. That's a bug TypeScript just caught: sorting `PLANS` would also reorder the signup form. Use the method that returns a sorted copy."
-TS7006 = "This error comes from the one just before it: `sort` doesn't exist on `PLANS`, so TypeScript has no function type to take the types of `a` and `b` from. Don't annotate them: fix the `sort` call and this error goes away."
+TS2322 = "`Plan` now only accepts the names listed in `PLANS`, and this one isn't there. While `Plan` was `string`, any text passed, typos and outdated plan names included. The tests say which plan new accounts start on."

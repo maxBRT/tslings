@@ -10,7 +10,7 @@
 // whatever name each importer picks, and shows up as `default` on `flags`.
 //
 // TODO: Make `Flag` and `isEnabled` named exports. `bucketOf` is an implementation detail:
-// make it private again.
+// make it private.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";

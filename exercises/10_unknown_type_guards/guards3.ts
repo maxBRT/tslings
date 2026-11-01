@@ -7,8 +7,9 @@
 // Our payment provider sends webhooks with JSON bodies like this one:
 //   { "id": "pay_123", "amount": 1999, "currency": "eur", "created": "2026-10-31T12:00:00Z" }
 //
-// Write `parsePayment`. On success, return the parsed payment. When something is wrong, return
-// an error that starts with the name of the field ("amount must be ...").
+// `parsePayment` already checks that the body is an object and that `id` is a string. Check the
+// other three fields the same way. When something is wrong, return an error that starts with
+// the name of the field ("amount must be ..."). On success, return the parsed payment.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -28,8 +29,17 @@ type Payment = {
 type ParseResult = { ok: true; payment: Payment } | { ok: false; error: string };
 
 function parsePayment(body: unknown): ParseResult {
-  // TODO: This trusts the webhook blindly. Check each field, and return
-  // `{ ok: false, error: "..." }` for the first one that's wrong.
+  if (typeof body !== "object" || body === null) {
+    return { ok: false, error: "body must be an object" };
+  }
+  // Each early return keeps what the check proved: below this `if`, `body.id` is a `string`.
+  if (!("id" in body) || typeof body.id !== "string") {
+    return { ok: false, error: "id must be a string" };
+  }
+  // TODO: The code below still trusts the other fields blindly. Check them the same way:
+  //   - `amount`: a non-negative whole number;
+  //   - `currency`: a string that, upper-cased, is one of `CURRENCIES`;
+  //   - `created`: a string that `new Date(...)` can parse.
   return {
     ok: true,
     payment: {

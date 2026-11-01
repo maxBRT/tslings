@@ -16,30 +16,26 @@ function monthlyPriceCents(plan: Plan): number {
   return 4900;
 }
 
-function pricingPageOrder(priceCents: (plan: Plan) => number): Plan[] {
-  // `sort` reorders the array in place, so it would have changed the signup form's order
-  // too. A readonly array has no `sort`; `toSorted` (ES2023) returns a sorted copy.
-  // `[...PLANS].sort(...)` works as well.
-  return PLANS.toSorted((a, b) => priceCents(b) - priceCents(a));
+function signupOptions(): string[] {
+  return PLANS.map((plan) => `${plan}: $${monthlyPriceCents(plan) / 100}/month`);
 }
+
+// Rename or remove a plan in `PLANS`, and TypeScript flags every place that still uses the
+// old name, like "starter" here. While `Plan` was `string`, any text was accepted.
+const DEFAULT_PLAN: Plan = "free";
 
 test("prices", () => {
   assert.equal(monthlyPriceCents("free"), 0);
+  assert.equal(monthlyPriceCents("pro"), 1200);
   assert.equal(monthlyPriceCents("team"), 4900);
 });
 
-test("the pricing page starts with the most expensive plan", () => {
-  assert.deepEqual(pricingPageOrder(monthlyPriceCents), ["team", "pro", "free"]);
+test("the signup form lists every plan, in order", () => {
+  assert.deepEqual(signupOptions(), ["free: $0/month", "pro: $12/month", "team: $49/month"]);
 });
 
-test("a promotion can change the order", () => {
-  const teamPromo = (plan: Plan) => (plan === "team" ? 900 : monthlyPriceCents(plan));
-  assert.deepEqual(pricingPageOrder(teamPromo), ["pro", "team", "free"]);
-});
-
-test("the signup form keeps its order", () => {
-  pricingPageOrder(monthlyPriceCents);
-  assert.deepEqual(PLANS, ["free", "pro", "team"]);
+test("new accounts start on the free plan", () => {
+  assert.equal(monthlyPriceCents(DEFAULT_PLAN), 0);
 });
 
 type _tests = [

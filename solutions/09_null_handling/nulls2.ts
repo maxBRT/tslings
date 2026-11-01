@@ -35,13 +35,17 @@ function resolveOptions(options: ClientOptions): ResolvedOptions {
   };
 }
 
-// Creating an `Intl.NumberFormat` is slow, so we keep one per currency.
-const formatters: Record<string, Intl.NumberFormat> = {};
+type Currency = "EUR" | "USD" | "JPY";
 
-function currencyFormatter(currency: string): Intl.NumberFormat {
-  // Reading `formatters[currency]` gives `Intl.NumberFormat | undefined`
-  // (noUncheckedIndexedAccess). The `??=` expression's value is never undefined.
-  // With a `Map`, the same idea is written with `get`, `??` and `set`.
+// Creating an `Intl.NumberFormat` is slow, so we keep one per currency.
+const formatters: Partial<Record<Currency, Intl.NumberFormat>> = {};
+
+function currencyFormatter(currency: Currency): Intl.NumberFormat {
+  // Reading `formatters[currency]` gives `Intl.NumberFormat | undefined`: `Partial`
+  // makes every key optional. The `??=` expression's value is never undefined.
+  // A `Record` fits because the currencies are known in advance. With keys that come
+  // from data, use a `Map` (`get`, `??`, `set`): a plain object would hand back its
+  // inherited `Object` function for the key "constructor".
   return (formatters[currency] ??= new Intl.NumberFormat("en-US", { style: "currency", currency }));
 }
 

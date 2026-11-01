@@ -14,7 +14,9 @@ that needs updating.
 
 `satisfies` fits in here too: `const FLAGS = { ... } satisfies Record<string, Flag>`
 checks a config against a type without replacing the config's own precise
-type, so its keys and literal values stay known.
+type. Its keys stay known, and so do its literal values wherever the checked
+type allows literals (a `Team` union, say). Other strings still widen to
+`string`: write `as const satisfies ...` to keep every literal.
 
 ## Further information
 

@@ -48,11 +48,11 @@ TS2353 = "`ParamName` doesn't find this path's param names yet, so the params ob
 name = "template_literals4"
 dir = "19_template_literal_types"
 hint = """
-Work in two steps. First, a mapped type over the keys of `T` whose value, for each key
-`K`, is that key's paths. Then index that mapped type with its own keys, like
-`T[keyof T]` in chapter 15, to collect every value into one union. For each key, test
-`T[K]`: a string ends the path, anything else needs a template literal type that calls
-`MessageKey` on `T[K]`. A template can't hold symbol keys: loop over `keyof T & string`.
+Work in two steps, like `StringKeys` above the TODO. First, a mapped type over the keys of
+`T` whose value, for each key `K`, is that key's paths. Then index that mapped type with its
+own keys to collect every value into one union. For each key, test `T[K]`: a string ends
+the path, anything else needs a template literal type that calls `MessageKey` on `T[K]`.
+A template can't hold symbol keys: loop over `keyof T & string`.
 https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html
 https://www.typescriptlang.org/docs/handbook/2/indexed-access-types.html"""
 

@@ -17,8 +17,8 @@ wrong. You'll write checks that must pass on working code and fail on broken cop
 
 ## Further information
 
-- [`node:test`](https://nodejs.org/api/test.html)
-- [Mocking in `node:test`](https://nodejs.org/api/test.html#mocking)
-- [`node:assert`](https://nodejs.org/api/assert.html)
+- [`node:test`](https://nodejs.org/docs/latest-v24.x/api/test.html)
+- [Mocking in `node:test`](https://nodejs.org/docs/latest-v24.x/api/test.html#mocking)
+- [`node:assert`](https://nodejs.org/docs/latest-v24.x/api/assert.html)
 - [`// @ts-expect-error` comments (TypeScript 3.9)](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-9.html#-ts-expect-error-comments)
-- [Running TypeScript natively in Node](https://nodejs.org/api/typescript.html)
+- [Running TypeScript natively in Node](https://nodejs.org/docs/latest-v24.x/api/typescript.html)

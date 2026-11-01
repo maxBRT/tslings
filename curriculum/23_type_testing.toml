@@ -7,7 +7,7 @@ type argument types the recorded calls. Pick a rate other than 1, or a converter
 the rate would still pass your checks. `await convert(1000, "USD")` then gives a `Price` you
 can compare with `assert.deepEqual`. For the last check, pass the promise itself:
 `await assert.rejects(convert(-5, "USD"))`.
-https://nodejs.org/api/test.html#mocking"""
+https://nodejs.org/docs/latest-v24.x/api/test.html#mocking"""
 
 [exercises.error_notes]
 TS2345 = "`mock.fn()` without an argument creates a function that returns `undefined`, but the converter needs one that returns a `Promise<number>`. Pass `mock.fn` a fake implementation: an async function that returns an exchange rate."
@@ -21,12 +21,14 @@ Copy the shape of the first test: `Expect<Equal<Settings["region"], Region>>`, a
 for `tags`. Both fail, and that's the point: they found two bugs. The ternary's result is
 widened to `string` inside the object literal, and `raw.tags` is `any` because `JSON.parse`
 returns `any`. Giving the function a return type fixes the first; the second also needs a real
-check of the tags (`Array.isArray`, then keep only the strings). Annotate `raw` with `unknown`
-fields so no `any` leaks into that check."""
+check of the tags (`Array.isArray`, then keep only the strings). So that no `any` leaks into
+that check, assign the parsed JSON to `unknown`, then narrow it to an object. A type whose
+fields are all optional and `unknown`, like `{ tags?: unknown }`, accepts any object."""
 
 [exercises.error_notes]
 TS2344 = "A type test is false. On `_count`, it means `_tests` doesn't have one test per comment yet. On one of your tests, or on `_spec`, it means `parseDeploySettings` doesn't match the spec in the comments: fix the function, not the test."
-TS7006 = "`raw` is `any`, because that's what `JSON.parse` returns, so everything read from it is `any` too, and this callback gets no parameter type. Stop the `any` at the source: annotate `raw`, for example `const raw: { tags?: unknown } = JSON.parse(json)` with all three fields."
+TS7006 = "`raw` is `any`, because that's what `JSON.parse` returns, so everything read from it is `any` too, and this callback gets no parameter type. Stop the `any` at the source: assign it to `unknown` (`const raw: unknown = JSON.parse(json)`), then narrow it to an object."
+TS18046 = "`raw` is `unknown`, so TypeScript wants proof before you read a field: `JSON.parse` may just as well return `null` or a number. Check that `raw` is an object and not `null`. Then read its fields as `unknown` values, and check each one before use."
 
 [[exercises]]
 name = "tests3"

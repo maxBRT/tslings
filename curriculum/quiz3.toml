@@ -10,8 +10,7 @@ hint = """
 - `where`: a second type parameter `K` for the key, and `T[K]` for the value.
 - `NewBook`: one utility type applied to `Book`.
 - `parseNewBook`: check `typeof body === "object"` (and not `null`), then use
-  `"title" in body` to make `body.title` accessible before checking its type.
-  A small type guard helps for the tags."""
+  `"title" in body` to make `body.title` accessible before checking its type."""
 
 [exercises.error_notes]
 TS18046 = "`Table` stores `unknown` rows, so TypeScript can't read their fields (`row.id`, `author.name`). Give the class a type parameter for the record type, constrained to have a string `id`, and use it instead of `unknown`."

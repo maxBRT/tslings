@@ -29,6 +29,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects
 [exercises.error_notes]
 TS2355 = "This function is still empty. Return a value built with the Set methods listed at the top of the file."
 TS2322 = "`VIEWER` and `EDITOR` were inferred as `Set<string>`, and not every string is a `Permission`. Give `new Set` the element type explicitly where the constants are declared: `new Set<Permission>([...])`."
+TS2344 = "A type test failed: `VIEWER` and `EDITOR` must be `Set<Permission>`, not `Set<string>`. Pass the element type to `new Set` where each constant is declared."
 
 [[exercises]]
 name = "collections3"
@@ -45,6 +46,8 @@ TS2322 = "A Map can't promise that a key is present, so `get` returns `number | 
 TS2741 = "A `Record<Plan, number>` needs a price for every plan, and this object is missing one. Add it: that check is what the `Record` buys you over a Map."
 TS2739 = "`MONTHLY_PRICE` is still a Map. A Map keeps its entries inside, not as properties, so it isn't a `Record<Plan, number>`. Turning it into a Record (the first TODO) fixes this error too."
 TS7053 = "`plan` is a `string` here, because `Object.keys` always returns `string[]`: a value may have more properties at runtime than its type says. Use `Object.entries` to get each price together with its key, instead of indexing with a `string`."
+TS2339 = "`MONTHLY_PRICE` is a plain object now, and plain objects don't have the methods of a Map, like `get`. Read the property with brackets instead: `MONTHLY_PRICE[plan]` is always a `number`, since the `Record` has every plan."
+TS2344 = "A type test failed: `MONTHLY_PRICE` must be a `Record<Plan, number>` object instead of a Map (the first TODO), and `priceList` must keep its `Record<Plan, number>` parameter."
 
 [[exercises]]
 name = "collections4"

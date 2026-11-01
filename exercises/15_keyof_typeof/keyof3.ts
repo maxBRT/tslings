@@ -1,5 +1,5 @@
 // An indexed access type reads one type out of another, with the same
-// brackets as JavaScript: `Subscription["plan"]` is the type of that property.
+// brackets as JavaScript: `Upload["format"]` is the type of that property.
 // Two forms come up all the time:
 //   T[number]    the element type of an array or tuple type
 //   T[keyof T]   the union of the types of all of T's properties
@@ -13,61 +13,63 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import type { Equal, Expect } from "#type-assert";
 
-const PLANS = ["free", "pro", "team", "enterprise"] as const;
+// The formats an image service accepts.
+const IMAGE_FORMATS = ["png", "jpeg", "webp", "avif"] as const;
 
 const STATUS_LABELS = {
-  active: "Active",
-  pastDue: "Payment overdue",
-  canceled: "Canceled",
+  queued: "Waiting",
+  resizing: "Resizing",
+  done: "Ready",
 } as const;
 
-// TODO: Someone added "enterprise" to PLANS and forgot to update this union.
-// Derive it from PLANS, so it can't fall behind again.
-type Plan = "free" | "pro" | "team";
+// TODO: Someone added "avif" to IMAGE_FORMATS and forgot to update this union.
+// Derive it from IMAGE_FORMATS, so it can't fall behind again.
+type ImageFormat = "png" | "jpeg" | "webp";
 
-interface Subscription {
-  plan: Plan;
+interface Upload {
+  format: ImageFormat;
   status: keyof typeof STATUS_LABELS;
-  billing: { interval: "month" | "year"; amountCents: number };
+  // `cover` fills the frame and crops what sticks out, `contain` shows the whole image.
+  resize: { fit: "cover" | "contain"; widthPx: number };
 }
 
-// TODO: Every label STATUS_LABELS can produce: "Active" | "Payment overdue" | "Canceled".
+// TODO: Every label STATUS_LABELS can produce: "Waiting" | "Resizing" | "Ready".
 type StatusLabel = string;
 
-// TODO: The type of `billing.interval` in Subscription.
-type BillingInterval = string;
+// TODO: The type of `resize.fit` in Upload.
+type Fit = string;
 
-function statusLabel(subscription: Subscription): StatusLabel {
-  return STATUS_LABELS[subscription.status];
+function statusLabel(upload: Upload): StatusLabel {
+  return STATUS_LABELS[upload.status];
 }
 
-function chargesPerYear(interval: BillingInterval): number {
-  return interval === "monthly" ? 12 : 1;
+function cropsImage(fit: Fit): boolean {
+  return fit === "covers";
 }
 
 // Don't change the tests below.
 
 test("labels the status", () => {
-  const sub: Subscription = {
-    plan: "enterprise",
-    status: "pastDue",
-    billing: { interval: "year", amountCents: 120_000 },
+  const upload: Upload = {
+    format: "avif",
+    status: "resizing",
+    resize: { fit: "contain", widthPx: 1200 },
   };
-  assert.equal(statusLabel(sub), "Payment overdue");
+  assert.equal(statusLabel(upload), "Resizing");
 });
 
-test("counts the charges per year", () => {
-  assert.equal(chargesPerYear("month"), 12);
-  assert.equal(chargesPerYear("year"), 1);
+test("knows which fit crops the image", () => {
+  assert.equal(cropsImage("cover"), true);
+  assert.equal(cropsImage("contain"), false);
 });
 
-test("PLANS is still a real array at runtime", () => {
-  assert.deepEqual(PLANS.toSorted(), ["enterprise", "free", "pro", "team"]);
+test("IMAGE_FORMATS is still a real array at runtime", () => {
+  assert.deepEqual(IMAGE_FORMATS.toSorted(), ["avif", "jpeg", "png", "webp"]);
 });
 
 // Type tests: each line only compiles when the two types are exactly the same.
 type _tests = [
-  Expect<Equal<Plan, "free" | "pro" | "team" | "enterprise">>,
-  Expect<Equal<StatusLabel, "Active" | "Payment overdue" | "Canceled">>,
-  Expect<Equal<BillingInterval, "month" | "year">>,
+  Expect<Equal<ImageFormat, "png" | "jpeg" | "webp" | "avif">>,
+  Expect<Equal<StatusLabel, "Waiting" | "Resizing" | "Ready">>,
+  Expect<Equal<Fit, "cover" | "contain">>,
 ];

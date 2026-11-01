@@ -6,7 +6,7 @@
 
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { SyntaxKind } from "typescript/unstable/ast";
+import { NodeFlags, SyntaxKind } from "typescript/unstable/ast";
 import type { Node, SourceFile } from "typescript/unstable/ast";
 import {
   isArrayLiteralExpression,
@@ -18,15 +18,19 @@ import {
   isPostfixUnaryExpression,
   isPrefixUnaryExpression,
   isPropertyAssignment,
+  isPropertyDeclaration,
   isShorthandPropertyAssignment,
   isSpreadAssignment,
   isSpreadElement,
   isTypeAssertion,
   isTypeReferenceNode,
+  isVariableDeclaration,
   isVariableDeclarationList,
 } from "typescript/unstable/ast/is";
-import { API } from "typescript/unstable/sync";
-import type { Diagnostic, Project } from "typescript/unstable/sync";
+import { API, DiagnosticCategory } from "typescript/unstable/sync";
+import type { Diagnostic, Project, Checker as TypeChecker } from "typescript/unstable/sync";
+import { describeTypeTest, findTypeTests, type ShownType } from "./type-tests.ts";
+import { findUnsafeAny } from "./unsafe-any.ts";
 
 /** A problem found in an exercise: a type error or a tslings lint. */
 export interface Problem {
@@ -37,6 +41,8 @@ export interface Problem {
   readonly message: string;
   /** Extra lines from TypeScript's message chain. */
   readonly details: readonly string[];
+  /** Types to compare, e.g. both sides of a failing `Expect<Equal<A, B>>`. */
+  readonly types?: readonly ShownType[];
   /** Explanation shown below the message, written for learners. */
   readonly note?: string;
   readonly file: string;
@@ -55,6 +61,7 @@ export interface RelatedInfo {
 /** Lint rules that are always errors: they stop learners from silencing the type checker. */
 export const CHEAT_RULES = [
   "no-explicit-any",
+  "no-unsafe-any",
   "no-type-assertion",
   "no-non-null-assertion",
   "no-ts-comment",
@@ -70,6 +77,8 @@ export interface CheckOptions {
   readonly allowLints?: readonly string[];
   /** Turn style warnings into errors. */
   readonly strictLint?: boolean;
+  /** Sibling modules the file imports (an exercise's `extra_files`): re-read from disk too. */
+  readonly extraFiles?: readonly string[];
 }
 
 export interface CheckResult {
@@ -78,10 +87,19 @@ export interface CheckResult {
   readonly ok: boolean;
 }
 
-const RULE_MESSAGES: Record<LintRule, { message: string; note: string }> = {
+interface RuleMessage {
+  readonly message: string;
+  readonly note: string;
+}
+
+const RULE_MESSAGES: Record<LintRule, RuleMessage> = {
   "no-explicit-any": {
     message: "`any` is not allowed in tslings exercises",
     note: "`any` switches type checking off for this value, so the exercise would pass without teaching anything. Use a precise type, a generic, or `unknown` and narrow it.",
+  },
+  "no-unsafe-any": {
+    message: "this value has type `any`, which switches type checking off",
+    note: "Some APIs return `any` without you writing it: `JSON.parse`, `new Map()` without type arguments, `Array.isArray` (which narrows to `any[]`). Declare the value as `unknown` and narrow it (`const data: unknown = JSON.parse(text)`), or give the type arguments: `new Map<string, number>()`.",
   },
   "no-type-assertion": {
     message: "type assertions (`as T`) are not allowed in tslings exercises",
@@ -107,6 +125,12 @@ const RULE_MESSAGES: Record<LintRule, { message: string; note: string }> = {
     message: "use `===` and `!==` instead of `==` and `!=`",
     note: "`==` converts types before comparing (`0 == \"\"` is true). The only common exception, `x == null`, is allowed because it checks for both `null` and `undefined`.",
   },
+};
+
+/** `let total!: number` and `name!: string` in a class: the same rule as `value!`, another message. */
+const DEFINITE_ASSIGNMENT: RuleMessage = {
+  message: "definite assignment assertions (`name!: Type`) are not allowed in tslings exercises",
+  note: "`!` after a name tells TypeScript the variable or field is always assigned before it's read, without checking. Give it a value where it's declared or in the constructor, or add `| undefined` to its type and check it before use.",
 };
 
 export class Checker {
@@ -137,10 +161,10 @@ export class Checker {
     });
   }
 
-  /** Type-check and lint one file. The file is re-read from disk. */
+  /** Type-check and lint one file. The file and its extra files are re-read from disk. */
   check(file: string, options: CheckOptions = {}): CheckResult {
     const path = resolve(file);
-    this.invalidate([path]);
+    this.invalidate([path, ...(options.extraFiles ?? []).map((extra) => resolve(extra))]);
     if (this.#project.program.getSourceFile(path) === undefined) {
       // A file created after the project was opened (e.g. a new solution file).
       this.#project = this.#openProject({ fileChanges: { created: [path] } });
@@ -151,14 +175,20 @@ export class Checker {
     const configDiagnostics = program.getConfigFileParsingDiagnostics().filter((diagnostic) => diagnostic.code !== 18003);
     const syntactic = program.getSyntacticDiagnostics(path);
     const semantic = syntactic.length > 0 ? [] : program.getSemanticDiagnostics(path);
-    const problems: Problem[] = [...configDiagnostics, ...syntactic, ...semantic].map(toProblem);
 
     const sourceFile = program.getSourceFile(path);
     if (sourceFile === undefined) {
       throw new Error(`The file ${path} is not part of the TypeScript project ${this.#configPath}`);
     }
+    const typeChecker = this.#project.checker;
+    const problems: Problem[] = [...configDiagnostics, ...syntactic].map(toProblem);
+    problems.push(...withTypeTests(semantic.map(toProblem), sourceFile, typeChecker));
+
     if (syntactic.length === 0) {
-      problems.push(...lint(sourceFile, path, options));
+      // Type errors make `any` appear on their own (a parameter without a type is `any`):
+      // the type-aware rule waits until they're fixed.
+      const typeErrors = semantic.some((diagnostic) => diagnostic.category === DiagnosticCategory.Error);
+      problems.push(...lint(sourceFile, path, options, typeErrors ? undefined : typeChecker));
     }
 
     return { problems, ok: problems.every((problem) => problem.severity !== "error") };
@@ -173,7 +203,7 @@ function toProblem(diagnostic: Diagnostic): Problem {
   return {
     source: "typescript",
     code: `TS${diagnostic.code}`,
-    severity: diagnostic.category === 1 ? "error" : "warning",
+    severity: diagnostic.category === DiagnosticCategory.Error ? "error" : "warning",
     message: diagnostic.text,
     details: flattenChain(diagnostic.messageChain ?? []),
     file: diagnostic.fileName ?? "",
@@ -188,6 +218,22 @@ function toProblem(diagnostic: Diagnostic): Problem {
   };
 }
 
+/** Most failing type tests on one file that get their types printed. Each takes a few calls to TypeScript. */
+const MAX_DESCRIBED_TYPE_TESTS = 20;
+
+/** Add both types to failing `Expect<Equal<A, B>>` checks (TS2344 on the `Equal<A, B>`). */
+function withTypeTests(problems: readonly Problem[], sourceFile: SourceFile, checker: TypeChecker): Problem[] {
+  if (!problems.some((problem) => problem.code === "TS2344")) return [...problems];
+  const tests = findTypeTests(sourceFile);
+  let described = 0;
+  return problems.map((problem) => {
+    const test = problem.code === "TS2344" ? tests.get(problem.start) : undefined;
+    if (test === undefined || test.end !== problem.end || described >= MAX_DESCRIBED_TYPE_TESTS) return problem;
+    described++;
+    return { ...problem, types: describeTypeTest(test, checker) };
+  });
+}
+
 function flattenChain(chain: readonly Diagnostic[], depth = 0): string[] {
   return chain.flatMap((link) => [
     `${"  ".repeat(depth)}${link.text}`,
@@ -195,19 +241,20 @@ function flattenChain(chain: readonly Diagnostic[], depth = 0): string[] {
   ]);
 }
 
-function lint(sourceFile: SourceFile, file: string, options: CheckOptions): Problem[] {
+/** Lint one file. The type-aware rule only runs when `typeChecker` is given. */
+function lint(sourceFile: SourceFile, file: string, options: CheckOptions, typeChecker: TypeChecker | undefined): Problem[] {
   const allowed = new Set(options.allowLints ?? []);
   const problems: Problem[] = [];
 
-  const report = (rule: LintRule, start: number, end: number): void => {
+  const report = (rule: LintRule, start: number, end: number, text: RuleMessage = RULE_MESSAGES[rule]): void => {
     if (allowed.has(rule)) return;
     const isCheat = (CHEAT_RULES as readonly string[]).includes(rule);
     problems.push({
       source: "lint",
       code: rule,
       severity: isCheat || options.strictLint === true ? "error" : "warning",
-      message: RULE_MESSAGES[rule].message,
-      note: RULE_MESSAGES[rule].note,
+      message: text.message,
+      note: text.note,
       details: [],
       file,
       start,
@@ -251,9 +298,20 @@ function lint(sourceFile: SourceFile, file: string, options: CheckOptions): Prob
       case SyntaxKind.NonNullExpression:
         report("no-non-null-assertion", node.getStart(sourceFile), node.end);
         break;
+      case SyntaxKind.VariableDeclaration:
+        if (isVariableDeclaration(node) && node.exclamationToken !== undefined) {
+          report("no-non-null-assertion", node.name.getStart(sourceFile), node.exclamationToken.end, DEFINITE_ASSIGNMENT);
+        }
+        break;
+      case SyntaxKind.PropertyDeclaration:
+        if (isPropertyDeclaration(node) && node.postfixToken?.kind === SyntaxKind.ExclamationToken) {
+          report("no-non-null-assertion", node.name.getStart(sourceFile), node.postfixToken.end, DEFINITE_ASSIGNMENT);
+        }
+        break;
       case SyntaxKind.VariableDeclarationList: {
         const text = sourceFile.text.slice(node.getStart(sourceFile), node.end);
-        if (/^var\b/.test(text)) {
+        // `declare global { var x: T }` is how globals are typed: `var` is the only way there.
+        if (/^var\b/.test(text) && (node.flags & NodeFlags.Ambient) === 0) {
           report("no-var", node.getStart(sourceFile), node.getStart(sourceFile) + 3);
         }
         if (/^let\b/.test(text) && isVariableDeclarationList(node)) {
@@ -313,7 +371,17 @@ function lint(sourceFile: SourceFile, file: string, options: CheckOptions): Prob
     }
   }
 
-  return problems;
+  if (typeChecker !== undefined && !allowed.has("no-unsafe-any")) {
+    for (const finding of findUnsafeAny(sourceFile, typeChecker)) {
+      report("no-unsafe-any", finding.start, finding.end, {
+        ...RULE_MESSAGES["no-unsafe-any"],
+        message: `this value has type \`${finding.type}\`, which switches type checking off`,
+      });
+    }
+  }
+
+  // Report in source order, like TypeScript.
+  return problems.sort((a, b) => a.start - b.start);
 }
 
 /** `x as const` and `<const>x` are the one kind of assertion tslings allows. */

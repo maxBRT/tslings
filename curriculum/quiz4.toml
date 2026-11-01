@@ -3,12 +3,17 @@ name = "quiz4"
 dir = "quizzes"
 hint = """
 (1) A built-in utility type keeps the members of a union that fit a shape: `{ type: Type }`.
-(2) Each reducer returns a new cart with `{ ...cart, ... }`; `event` is already narrowed.
-(3) `for await (const event of events)`, and keep the current cart in a `let`.
-(4) Map over `Event["type"]` and rename each key with `as` and a template literal type."""
+(2) One `Expect<Equal<Found, Expected>>` per test, separated by a comma.
+(3) Each reducer returns a new cart with `{ ...cart, ... }`; `event` is already narrowed.
+(4) Check that the value is an object with a `type`, then `switch` on `value.type` and check the
+    fields of that event with `"field" in value` and `typeof`.
+(5) `for await (const line of lines)`, the current cart in a `let`. Put only `JSON.parse` in
+    the `try`, and let `isCartEvent` narrow its `unknown` result.
+(6) Map over `Event["type"]` and rename each key with `as` and a template literal type."""
 
 [exercises.error_notes]
 TS18046 = "`event` is `unknown` because `EventOf` is still `unknown` (TODO 1). Once `EventOf<Type>` picks the right member of `CartEvent`, each reducer knows exactly which event it gets."
-TS2739 = "`Reducers` has one entry per event type, so the object must handle all of them. That's TODO 2: TypeScript lists the missing ones."
-TS7053 = "On `reducers[event.type]`, this comes from `event` being `unknown`, and goes away with TODO 1. On `counts[...]`, `EventCounts` is still `{}` (TODO 4), so it has no counter keys to index."
+TS2739 = "`Reducers` has one entry per event type, so the object must handle all of them. That's TODO 3: TypeScript lists the missing ones."
+TS7053 = "On `reducers[event.type]`, this comes from `event` being `unknown`, and goes away with TODO 1. On `counts[...]`, `EventCounts` is still `{}` (TODO 6), so it has no counter keys to index."
 TS2339 = "`EventOf` is still `unknown` (TODO 1), and `unknown` has no `type` property."
+TS2344 = "A type test is false: compare `found` with `expected`. On `_eventOfCount`, `_eventOfTests` doesn't hold your two type tests yet (TODO 2). On one of them, `EventOf` isn't right yet (TODO 1); at the end of the file, `EventCounts` isn't (TODO 6)."

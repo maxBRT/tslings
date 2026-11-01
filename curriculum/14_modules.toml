@@ -51,8 +51,9 @@ extra_files = ["money.ts", "dates.ts"]
 hint = """
 Write one re-export line per source module, listing names in braces: `export { a, b } from ...`.
 Rename on the way out with `original as published`, like in an import.
-Types can't go in a plain `export { }` line, because Node erases types and would then look
-for a value that doesn't exist. Give them their own `export type { ... } from ...` line.
+Types must be marked as types, because Node erases them and would otherwise look for a value
+that doesn't exist. Give them their own `export type { ... } from ...` line, or mark each one
+inline: `export { type Money } from ...`.
 `assertSameCurrency` is internal: don't publish it.
 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export"""
 

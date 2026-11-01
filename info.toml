@@ -42,8 +42,9 @@ dir = "00_intro"
 test = false
 skip_check_unsolved = true
 hint = """
-Enter `n` to move on to the next exercise.
-You might need to press ENTER after typing `n`."""
+This exercise already passes, there's nothing to fix. Change the name passed to
+`welcome`, save the file, and watch the output change.
+Then enter `n` to move on to the next exercise."""
 
 [[exercises]]
 name = "intro2"
@@ -175,7 +176,7 @@ https://www.typescriptlang.org/docs/handbook/2/functions.html#function-type-expr
 TS7019 = "A rest parameter collects the remaining arguments into an array, so its type is an array type, like `string[]`. Here it's an array of price rules."
 TS7006 = "An arrow function without annotations gets its parameter types from the function type expected where it's written. Here there isn't one yet: either `PriceRule` is still `unknown`, or `rules` has no type. Fix both and this error disappears, without annotating `price`."
 TS18046 = "`rule` is a `PriceRule`, and `PriceRule` is still `unknown`, so TypeScript doesn't know it can be called. Define `PriceRule` as a function type."
-TS2344 = "A type test failed: `PriceRule` must be a function type that takes a number and returns a number, and `rules` must be an array of `PriceRule`."
+TS2344 = "A type test failed: `PriceRule` must be a function type that takes a number and returns a number, and `rules` must be an array of `PriceRule`. Until `PriceRule` is defined, the expected types show it as `unknown`."
 
 [[exercises]]
 name = "functions5"
@@ -250,14 +251,13 @@ name = "literals2"
 dir = "03_primitives_literals"
 hint = """
 Add `as const` right after the array literal. `Plan` is already derived from `PLANS`.
-`as const` also makes the array `readonly`, which rules out methods that change it in
-place. Arrays have a method that returns a sorted copy instead.
+Once `Plan` is a union, TypeScript checks every value typed `Plan` against the list, and
+one of them isn't in it. The test names tell you which plan it should be.
 https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-4.html#const-assertions"""
 
 [exercises.error_notes]
 TS2344 = "A type test failed: `PLANS` is inferred as `string[]`, so `Plan` is just `string`. Tell TypeScript the array never changes, so it keeps the literal types."
-TS2339 = "`PLANS` is `readonly` now, so methods that modify it in place, like `sort`, don't exist on it. That's a bug TypeScript just caught: sorting `PLANS` would also reorder the signup form. Use the method that returns a sorted copy."
-TS7006 = "This error comes from the one just before it: `sort` doesn't exist on `PLANS`, so TypeScript has no function type to take the types of `a` and `b` from. Don't annotate them: fix the `sort` call and this error goes away."
+TS2322 = "`Plan` now only accepts the names listed in `PLANS`, and this one isn't there. While `Plan` was `string`, any text passed, typos and outdated plan names included. The tests say which plan new accounts start on."
 
 # -------------------- 04_arrays_tuples.toml --------------------
 
@@ -276,7 +276,9 @@ with spread syntax.
 https://www.typescriptlang.org/docs/handbook/2/objects.html#the-readonlyarray-type"""
 
 [exercises.error_notes]
+TS7006 = "Without an annotation, `scores` would be `any`, and `strict` forbids that. It's a list of numbers that `averageScore` only reads: type it the way `topThree` types its parameter."
 TS2339 = "`readonly number[]` has none of the methods that change an array, so `sort` (which sorts in place) is gone. ES2023 added copying versions of the mutating methods: look for one that returns a sorted copy."
+TS2344 = "A type test failed: `averageScore` must take a `readonly number[]`, like `topThree`, so that neither function can change the caller's scores."
 
 [[exercises]]
 name = "arrays2"
@@ -291,7 +293,7 @@ https://www.typescriptlang.org/tsconfig/#noUncheckedIndexedAccess"""
 
 [exercises.error_notes]
 TS2532 = "With `noUncheckedIndexedAccess`, `sessions[i]` is `number | undefined`: TypeScript doesn't connect the index to the loop condition. Iterate over the elements themselves instead of over indexes."
-TS2322 = "The last element of an array is `string | undefined`, whether you read it with an index or with `.at(-1)`: the array may be empty. Handle the empty case before returning a `string`."
+TS2322 = "The last element of an array is `string | undefined`, whether you read it with an index or with `.at(-1)`: the array may be empty. Checking `messages.length` first doesn't help, because TypeScript doesn't connect the length to the index. Read the element, then check that value for `undefined` (or use `??`)."
 TS18048 = "Reading `argv[0]` or `argv[1]` gives `string | undefined`: the user may not have passed that argument. Destructuring with a default (`const [a = \"x\"] = list`) gives you a plain `string`."
 
 [[exercises]]
@@ -299,7 +301,7 @@ name = "arrays3"
 dir = "04_arrays_tuples"
 hint = """
 `Boolean` is a plain function returning `boolean`, so `filter` can't tell
-which type survives, and it drops the rating `0` because `0` is falsy.
+which type survives, and it drops the score `0` because `0` is falsy.
 Write the callback yourself, as an arrow function that compares the value
 with `undefined`. TypeScript infers the type predicate for you.
 https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-5.html#inferred-type-predicates"""
@@ -322,6 +324,7 @@ https://www.typescriptlang.org/docs/handbook/2/objects.html#tuple-types"""
 [exercises.error_notes]
 TS18048 = "`Position` is `number[]`, so TypeScript can't promise the array has a first or a second element: each destructured value may be `undefined`. Make `Position` a tuple (see the TODO): the positions it declares are always there."
 TS2532 = "While `Position` is a `number[]`, reading `a[0]` or `b[1]` may give `undefined`: the array could be too short. Once `Position` is a tuple, its first two positions are always numbers and these errors go away."
+TS2344 = "A type test failed: `Position` must be a tuple of two required numbers followed by an optional one. The expected type shows no labels because labels don't count when tuple types are compared: keep yours."
 
 [[exercises]]
 name = "arrays5"
@@ -336,6 +339,7 @@ https://www.typescriptlang.org/docs/handbook/2/objects.html#readonly-tuple-types
 
 [exercises.error_notes]
 TS2556 = "The spread value is a `number[]`, which could hold any number of elements, but `resizeWindow` needs exactly two. Give the value a tuple type: `as const` for the constant, a return type annotation for `parseSize`."
+TS2344 = "A type test failed. `DEFAULT_SIZE` must be the readonly tuple of literals that `as const` gives. `parseSize` must declare a plain tuple as its return type, `[width: number, height: number]`: `as const` on the returned array would make the pair readonly for every caller, and wouldn't say what each number means."
 
 # -------------------- 05_objects.toml --------------------
 
@@ -354,6 +358,7 @@ https://www.typescriptlang.org/docs/handbook/2/objects.html#intersection-types""
 
 [exercises.error_notes]
 TS2339 = "`Product`, `DigitalProduct` and `CartLine` are still empty object types, so TypeScript doesn't know about any of their properties yet. Describe them as the TODOs say."
+TS2344 = "A type test failed: compare the TODO of the type on the `found` line with the `expected` line (for an interface, `found` only shows its name). `CartLine` must be written with `&`: listing the four properties again gives the same shape, but the type test tells the two spellings apart."
 
 [[exercises]]
 name = "objects2"
@@ -410,8 +415,9 @@ real: decide what a missing flag means and return that.
 https://www.typescriptlang.org/docs/handbook/utility-types.html#recordkeys-type"""
 
 [exercises.error_notes]
-TS2322 = "With `string` keys, any key may be missing, so a read gives `V | undefined`. `GREETINGS` only needs the `Locale` keys: give it a type that lists them, and reads become safe. Flags have open-ended keys: handle the missing case."
+TS2322 = "With `string` keys, any key may be missing, so a read gives `V | undefined`. If this is the `GREETINGS` read: that object only needs the `Locale` keys, so give it a type that lists them, and the read becomes safe. If it's the flags read: their keys really are open-ended, so decide what a missing flag means."
 TS2741 = "`Record<Locale, string>` requires one entry per locale, and this one is missing. Add it to the object; that check is the reason to use a `Record` here."
+TS2344 = "A type test failed: `GREETINGS` must be typed with `Locale` as its keys, `Record<Locale, string>`, instead of `string` keys. That type is what makes TypeScript demand a greeting for every locale."
 
 # -------------------- 06_collections.toml --------------------
 
@@ -446,6 +452,7 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects
 [exercises.error_notes]
 TS2355 = "This function is still empty. Return a value built with the Set methods listed at the top of the file."
 TS2322 = "`VIEWER` and `EDITOR` were inferred as `Set<string>`, and not every string is a `Permission`. Give `new Set` the element type explicitly where the constants are declared: `new Set<Permission>([...])`."
+TS2344 = "A type test failed: `VIEWER` and `EDITOR` must be `Set<Permission>`, not `Set<string>`. Pass the element type to `new Set` where each constant is declared."
 
 [[exercises]]
 name = "collections3"
@@ -462,6 +469,8 @@ TS2322 = "A Map can't promise that a key is present, so `get` returns `number | 
 TS2741 = "A `Record<Plan, number>` needs a price for every plan, and this object is missing one. Add it: that check is what the `Record` buys you over a Map."
 TS2739 = "`MONTHLY_PRICE` is still a Map. A Map keeps its entries inside, not as properties, so it isn't a `Record<Plan, number>`. Turning it into a Record (the first TODO) fixes this error too."
 TS7053 = "`plan` is a `string` here, because `Object.keys` always returns `string[]`: a value may have more properties at runtime than its type says. Use `Object.entries` to get each price together with its key, instead of indexing with a `string`."
+TS2339 = "`MONTHLY_PRICE` is a plain object now, and plain objects don't have the methods of a Map, like `get`. Read the property with brackets instead: `MONTHLY_PRICE[plan]` is always a `number`, since the `Record` has every plan."
+TS2344 = "A type test failed: `MONTHLY_PRICE` must be a `Record<Plan, number>` object instead of a Map (the first TODO), and `priceList` must keep its `Record<Plan, number>` parameter."
 
 [[exercises]]
 name = "collections4"
@@ -574,11 +583,11 @@ prefer-const = "Keep the `let` this time: the exercise is to reassign `value` wh
 name = "unions6"
 dir = "07_unions_narrowing"
 hint = """
-Above the `if`, write `const user = currentUser;`, then check and use `user`
-everywhere instead of `currentUser`. The callback captures `user`, which can't
-be reassigned, so the check stays valid when the email is built, and logging
-someone else in later doesn't change who gets it.
-https://www.typescriptlang.org/docs/handbook/2/narrowing.html"""
+The callback needs a value that can't change between now and when it runs.
+Which kind of declaration can't be reassigned? Narrow that one, and use it in
+the callback. It also decides who gets the email: the callback keeps the user
+from when it was queued, even if someone else logs in before the flush.
+https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-4.html#preserved-narrowing-in-closures-following-last-assignments"""
 
 [exercises.error_notes]
 TS18048 = "You did check `currentUser` above, but this arrow function runs later, when the outbox is flushed. `currentUser` is a `let` that `logIn` and `logOut` can change before then, so TypeScript doesn't carry the check into the callback. Copy it into a `const` and check that instead: a const can't change, so the check still holds inside the callback."
@@ -625,16 +634,16 @@ https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unio
 
 [exercises.error_notes]
 TS18048 = "Don't patch this line. With optional fields, checking `status` tells TypeScript nothing about `user` or `error`: the type allows a \"success\" without a user. Change `ProfileState` so that the success state always has a `user` and the error state always has an `error`."
-TS2344 = "A type-level test failed: `ProfileState` doesn't have the shape the tests describe yet. Each status needs its own member of the union, with only the fields that exist in that state: a required `user` in \"success\", a required `error` in \"error\", and nothing but `status` in the other two."
+TS2344 = "A type-level test failed: `ProfileState` doesn't have the shape the tests describe yet. Each status needs its own member of the union, with only the fields that exist in that state: a required `user` in \"success\", a required `error` in \"error\", and nothing but `status` in the other two. While `ProfileState` is one object type, `Extract` finds no member for a status and gives `never`: that's the `never` in \"found\", and `string | number | symbol` is what `keyof never` gives."
 
 [[exercises]]
 name = "discriminated4"
 dir = "08_discriminated_unions"
 hint = """
-In `invoiceTitle`, replace the two lines with one destructuring:
-`const { data, error } = result;`. Checking `error` then narrows `data`.
-`unwrapInvoice` destructures its parameter, which links them too: check
-`error`, throw `new Error(...)` with its message, and return `data` after that.
+TypeScript only links `data` and `error` when both come out of `result` in a
+single `const` destructuring, or in a destructured parameter like
+`unwrapInvoice`'s. Then checking `error` narrows `data`. In `unwrapInvoice`,
+throw when there is an error, with its message, and return `data` after that.
 https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-6.html#control-flow-analysis-for-destructured-discriminated-unions"""
 
 [exercises.error_notes]
@@ -725,7 +734,8 @@ dir = "quizzes"
 hint = """
 `applyEvent`: `switch (event.type)`, check `order.status` in each `case`, return
 `undefined` for refused moves, and end with a `never` check. `...order` copies
-every field, so only spread when you want all of them.
+every field, so only spread when you want all of them: TypeScript doesn't flag
+extra fields that come from a spread, but the tests compare the whole object.
 `processEvents`: `new Map(orders)` makes a copy; `get` can return `undefined`.
 `findOrder`: `typeof query` tells the two kinds of query apart, and only shipped
 orders have a tracking number."""
@@ -746,7 +756,7 @@ static method for that, but it returns a plain `boolean`, so it doesn't narrow o
 https://www.typescriptlang.org/docs/handbook/2/narrowing.html#typeof-type-guards"""
 
 [exercises.error_notes]
-TS18046 = "`stored` came from `JSON.parse`, so it could be anything: `16`, `\"16\"`, `null`, `[16]`. Check `typeof stored` before using it. Deleting the `unknown` annotation would also silence this error, but `stored` would become `any` and the bug would get through to the tests."
+TS18046 = "`stored` came from `JSON.parse`, so it could be anything: `16`, `\"16\"`, `null`, `[16]`. Check `typeof stored` before using it. Deleting the `unknown` annotation is no way out: `stored` would become `any`, which turns type checking off, and tslings rejects it."
 TS2322 = "The function promises to return a `number`, and `stored` is still `unknown` here. Once you've narrowed `stored` with `typeof`, this error goes away too."
 
 [[exercises]]
@@ -794,17 +804,17 @@ TS2344 = "These type tests check the signatures of `assertIsString` and `assertI
 name = "guards3"
 dir = "10_unknown_type_guards"
 hint = """
-Check `body` the way you did in unknown2: object first, then each field with `in` and
-`typeof`, returning `{ ok: false, error }` early. Each early return keeps the narrowing for the
-lines below it. A `string` isn't a `Currency` yet: a small type guard on `CURRENCIES` fixes it
-(`includes` won't accept a plain `string` there). An invalid date string gives a `Date` whose
-`getTime()` is `NaN`.
+Copy the shape of the `id` check for each field: `in` to prove the property is there, `typeof`
+for its type, and an early `return { ok: false, error }` when it's wrong. A `string` isn't a
+`Currency` yet: a small type guard on `CURRENCIES` fixes it. `includes` won't accept a plain
+`string` there, but `some` can compare each entry with it. An invalid date string gives a
+`Date` whose `getTime()` is `NaN`.
 https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/"""
 
 [exercises.error_notes]
-TS18046 = "The webhook body is `unknown`: don't trust it yet. Check that it's an object, then check each field with `in` and `typeof`, before building the `Payment`."
-TS2339 = "`body` is narrowed to `object`, which has no known properties. Check that the property is there with `\"id\" in body`, then check its type."
-TS2322 = "A `string` isn't a `Currency` until you've checked that it is one of `CURRENCIES`. `CURRENCIES.includes(code)` doesn't accept a plain `string`; a small type guard `(code: string): code is Currency` does the job."
+TS2339 = "So far TypeScript only knows that `body` is an object with an `id`. Check the other properties the way the `id` check does: `in` proves the property is there, then `typeof` checks its type."
+TS2322 = "A `string` isn't a `Currency` until you've checked that it is one of `CURRENCIES`. Write a small type guard, `(code: string): code is Currency`, that compares `code` with each entry (`CURRENCIES.some(...)`), and call it before building the payment."
+TS2345 = "If this is `CURRENCIES.includes(...)`: `CURRENCIES` is a tuple of literals (`as const`), so its `includes` only accepts those literals, and a plain `string` is refused. Leave `CURRENCIES` as it is and compare the entries yourself in a type guard: `CURRENCIES.some((currency) => currency === code)` accepts any string, and the guard's `code is Currency` return type turns the result into narrowing. If the argument is still `unknown`, check it with `typeof` first."
 
 # -------------------- 11_error_handling.toml --------------------
 
@@ -861,7 +871,7 @@ return type yourself, with the type that means "this never returns".
 https://www.typescriptlang.org/docs/handbook/2/functions.html#never"""
 
 [exercises.error_notes]
-TS2322 = "`fail` always throws, but TypeScript doesn't know that: a function declaration is inferred as returning `void`. So `env.DATABASE_URL ?? fail(...)` looks like `string | void`, and `value` could still be `undefined` after `fail(...)`. Annotate the declaration: `function fail(message: string): never`. (Keep it a `function`: an arrow function stored in a `const` doesn't narrow the code after its calls, even with `: never` on the arrow.)"
+TS2322 = "`fail` always throws, but TypeScript doesn't know that: a function declaration is inferred as returning `void`. So `flags.get(\"--out\") ?? fail(...)` looks like `string | void`, and `value` could still be `undefined` after `fail(...)`. Annotate the declaration: `function fail(message: string): never`. (Keep it a `function`: an arrow function stored in a `const` doesn't narrow the code after its calls, even with `: never` on the arrow.)"
 TS2366 = "TypeScript thinks the function can reach its end after `fail(...)`, because `fail`'s return type is inferred as `void`. Once `fail` is annotated `: never`, the call ends this code path, like a `throw`."
 TS2344 = "This type test checks that `fail`'s return type is `never`: the return type of a function that never returns normally."
 
@@ -973,6 +983,7 @@ https://www.typescriptlang.org/docs/handbook/2/functions.html#generic-functions"
 [exercises.error_notes]
 TS2345 = "`pipe` says `first` must accept `unknown`, any value at all, but the function passed here only accepts one kind of value (a `string`, a `Post`). Rather than accept anything, `pipe` should take its input type from `first`: that's a job for a type parameter."
 TS18046 = "`pipe` hands `unknown` to `second`, so TypeScript knows nothing about its parameter. With type parameters, `second`'s input type comes from what `first` returns."
+TS2344 = "The type tests check the function that `pipe` builds: `slugify` must be `(input: string) => string`. As long as `pipe` is written with `unknown`, it can only return `(input: unknown) => unknown`, whatever you pass it. The fix is in `pipe`'s signature, not in the tests."
 
 [[exercises]]
 name = "generics7"
@@ -1002,7 +1013,7 @@ an initializer for values every instance starts with.
 https://www.typescriptlang.org/docs/handbook/2/classes.html#fields"""
 
 [exercises.error_notes]
-TS2564 = "This field may still be `undefined` when the constructor finishes. Assign it in the constructor if the value comes from a parameter, or give it an initial value where it's declared. (Writing `field!: type` would silence this error, and crash at runtime instead.)"
+TS2564 = "This field may still be `undefined` when the constructor finishes. Assign it in the constructor if the value comes from a parameter, or give it an initial value where it's declared. (`field!: type` would silence this error and crash at runtime instead, which is why tslings rejects it.)"
 TS2344 = "The type test checks that `maxRequests` and `windowMs` are `readonly`: they're set once, in the constructor, and never change."
 
 [[exercises]]
@@ -1060,8 +1071,8 @@ https://www.typescriptlang.org/docs/handbook/enums.html#objects-vs-enums"""
 
 [exercises.error_notes]
 TS1294 = "`enum` generates a JavaScript object at compile time, so Node can't run it by erasing types. Replace it with a plain object marked `as const`, and a type of the same name derived from it."
-TS2345 = "This is the other reason teams avoid enums: a string enum only accepts its own members (`LogLevel.Debug`), not the string `\"debug\"`, even though that's its value. A union of string literals accepts both."
-TS2344 = "The type tests check that the type `LogLevel` is the union of the four strings, and that `LogLevel.Warn` has the literal type `\"warn\"` (which is what `as const` gives you)."
+TS2345 = "This is the other reason teams avoid enums: a string enum only accepts its own members (`Priority.High`), not the string `\"high\"`, even though that's its value. A union of string literals accepts both."
+TS2344 = "The type tests check that the type `Priority` is the union of the four strings, and that `Priority.High` has the literal type `\"high\"` (which is what `as const` gives you)."
 
 [[exercises]]
 name = "classes6"
@@ -1075,7 +1086,7 @@ https://www.typescriptlang.org/docs/handbook/2/classes.html#this-types"""
 [exercises.error_notes]
 TS2315 = "`Repository` has no type parameter yet, so `Repository<Product>` doesn't mean anything. Declare one after the class name, like for a generic function. Most of the other errors in this file come from this one."
 TS2558 = "`Repository` has no type parameter yet, so it can't take a type argument. Declare one after the class name."
-TS2339 = "Several errors in this file come from the first one: fix `Repository` first. Then, if `T` has no `id`: TypeScript only knows what a constraint promises, so constrain `T` to entities. If `inStock` or `byEmail` is missing after `.add(...)`: `add` returns a plain `Repository`, which doesn't have the subclass's methods. The return type `this` keeps the exact type of the object."
+TS2339 = "Look at which property is missing. `all` on a subclass: `Repository` isn't generic yet, so the subclass can't extend `Repository<...>`; fix `Repository` first. `name` on `Entity`: the methods still use `Entity`, so use the type parameter instead. `id` on `T`: TypeScript only knows what a constraint promises, so constrain `T` to entities. `inStock` or `byEmail` after `.add(...)`: `add` returns a plain `Repository`, which doesn't have the subclass's methods; the return type `this` keeps the exact type of the object."
 TS7006 = "This one comes from the first error: the subclass can't extend `Repository<...>` yet, so `this.all()` has no known type. Fix `Repository` first."
 TS2351 = "This one comes from the first error: the subclass can't extend `Repository<...>` yet. Fix `Repository` first."
 TS2353 = "This one comes from the first error: until `Repository` is generic, it only knows about `Entity`, which has no `email`. Fix `Repository` first."
@@ -1136,8 +1147,9 @@ extra_files = ["money.ts", "dates.ts"]
 hint = """
 Write one re-export line per source module, listing names in braces: `export { a, b } from ...`.
 Rename on the way out with `original as published`, like in an import.
-Types can't go in a plain `export { }` line, because Node erases types and would then look
-for a value that doesn't exist. Give them their own `export type { ... } from ...` line.
+Types must be marked as types, because Node erases them and would otherwise look for a value
+that doesn't exist. Give them their own `export type { ... } from ...` line, or mark each one
+inline: `export { type Money } from ...`.
 `assertSameCurrency` is internal: don't publish it.
 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export"""
 
@@ -1185,20 +1197,20 @@ TS7053 = "`MESSAGES` only has the keys `en` and `fr`, but `locale` is typed as a
 name = "keyof3"
 dir = "15_keyof_typeof"
 hint = """
-- `Plan`: `typeof PLANS` is a tuple type. Index it with `number` to get the
-  union of its elements: `(typeof PLANS)[number]`.
+- `ImageFormat`: `typeof IMAGE_FORMATS` is a tuple type. Which index type reads
+  "any element" out of it? The header lists it.
 - `StatusLabel`: index the type of STATUS_LABELS with the union of its own keys.
-- `BillingInterval`: index `Subscription` with "billing", then with "interval",
-  like you would chain property accesses.
+- `Fit`: index `Upload` with "resize", then with "fit", like you would chain
+  property accesses.
 
-Once `BillingInterval` is precise, TypeScript points at a bug in
-`chargesPerYear`. Fix the bug, not the type.
+Once `Fit` is precise, TypeScript points at a bug in `cropsImage`. Fix the
+bug, not the type.
 https://www.typescriptlang.org/docs/handbook/2/indexed-access-types.html"""
 
 [exercises.error_notes]
-TS2322 = "The hand-written `Plan` union doesn't list \"enterprise\", but PLANS does. Derive `Plan` from PLANS with an indexed access type, so the list and the type can't disagree again."
+TS2322 = "The hand-written `ImageFormat` union doesn't list \"avif\", but IMAGE_FORMATS does. Derive `ImageFormat` from IMAGE_FORMATS with an indexed access type, so the list and the type can't disagree again."
 TS2344 = "This type is still `string`, or a hand-written union. Derive it with an indexed access type: `SomeType[\"property\"]`, `SomeTuple[number]` or `SomeType[keyof SomeType]`."
-TS2367 = "Now that `interval` is `\"month\" | \"year\"` instead of `string`, TypeScript can see this comparison is never true. That's the bug the precise type was hiding: fix the string being compared."
+TS2367 = "Now that `fit` is `\"cover\" | \"contain\"` instead of `string`, TypeScript can see this comparison is never true. That's the bug the precise type was hiding: fix the string being compared."
 
 [[exercises]]
 name = "keyof4"
@@ -1319,8 +1331,7 @@ hint = """
 - `where`: a second type parameter `K` for the key, and `T[K]` for the value.
 - `NewBook`: one utility type applied to `Book`.
 - `parseNewBook`: check `typeof body === "object"` (and not `null`), then use
-  `"title" in body` to make `body.title` accessible before checking its type.
-  A small type guard helps for the tags."""
+  `"title" in body` to make `body.title` accessible before checking its type."""
 
 [exercises.error_notes]
 TS18046 = "`Table` stores `unknown` rows, so TypeScript can't read their fields (`row.id`, `author.name`). Give the class a type parameter for the record type, constrained to have a string `id`, and use it instead of `unknown`."
@@ -1369,7 +1380,7 @@ type, `T[K]`, against `AnyFunction`, and answer either `K` (keep the key) or `ne
 https://www.typescriptlang.org/docs/handbook/2/mapped-types.html#key-remapping-via-as"""
 
 [exercises.error_notes]
-TS2739 = "`StateOf<CartStore>` and `ActionsOf<CartStore>` still contain every key of the store, so these objects look incomplete. Don't add the missing keys here: filter them out of the two types with an `as` clause."
+TS2739 = "`StateOf<EditorStore>` and `ActionsOf<EditorStore>` still contain every key of the store, so these objects look incomplete. Don't add the missing keys here: filter them out of the two types with an `as` clause."
 
 [[exercises]]
 name = "mapped4"
@@ -1378,14 +1389,14 @@ hint = """
 `Record<keyof T, ...>` gives every key the same value type. A mapped type over
 `keyof T` lets you use `T[K]`, the type of the field you're on, inside `FieldState`.
 
-Once that works, `couponCode` becomes a problem: a mapped type over `keyof T` copies
-the `?` from `CheckoutForm`. You saw how to remove a modifier in mapped2.
+Once that works, `badgeName` becomes a problem: a mapped type over `keyof T` copies
+the `?` from `RegistrationForm`. You saw how to remove a modifier in mapped2.
 https://www.typescriptlang.org/docs/handbook/2/mapped-types.html#mapping-modifiers"""
 
 [exercises.error_notes]
-TS18046 = "`FormState` gives every field the same `FieldState<unknown>`, so TypeScript has forgotten what each value holds: a string for `email`, a number for `quantity`. Change `FormState` so each field's state uses that field's own type."
-TS2345 = "The cause is `FormState`, not this call. If the message mentions `unknown` or `{}`, the field's value lost its type. If it ends with `| undefined`, the field's state itself became optional, because a mapped type over `keyof T` copies the `?` of `couponCode`."
-TS18048 = "`couponCode` is optional in `CheckoutForm`, and a mapped type over `keyof T` copies that `?`, so the field's state became optional too. The form needs a state for every field: remove the modifier in `FormState`."
+TS18046 = "`FormState` gives every field the same `FieldState<unknown>`, so TypeScript has forgotten what each value holds: a string for `email`, a number for `seats`. Change `FormState` so each field's state uses that field's own type."
+TS2345 = "The cause is `FormState`, not this call. If the message mentions `unknown` or `{}`, the field's value lost its type. If it ends with `| undefined`, the field's state itself became optional, because a mapped type over `keyof T` copies the `?` of `badgeName`."
+TS18048 = "`badgeName` is optional in `RegistrationForm`, and a mapped type over `keyof T` copies that `?`, so the field's state became optional too. The form needs a state for every field: remove the modifier in `FormState`."
 
 # -------------------- 18_conditional_types.toml --------------------
 
@@ -1462,6 +1473,21 @@ TS2344 = "This type test compares `DeepReadonly<...>` with the type it should pr
 TS7006 = "This parameter lost its type because `onError` isn't a function type anymore in `DeepReadonly<AppConfig>`: a mapped type turns a function type into `{}`. Don't annotate the parameter. Make `DeepReadonly` leave functions as they are."
 TS2349 = "`onError` isn't callable anymore: a mapped type applied to a function type keeps its properties (it has none) and drops the call signature. Make `DeepReadonly` leave functions alone, and test for them before testing for objects."
 
+[[exercises]]
+name = "conditional6"
+dir = "18_conditional_types"
+hint = """
+`Infer` is a mapped type over the keys of `S`, like the ones of chapter 17. For each key `K`,
+test the kind `S[K]` with conditional types: `S[K] extends "string" ? string : ...`, and chain
+a second one for numbers.
+For `matches`, the return type `value is Infer<S>` turns a `true` into a narrowing, as with
+the type guards of chapter 10.
+https://www.typescriptlang.org/docs/handbook/2/conditional-types.html"""
+
+[exercises.error_notes]
+TS18046 = "`matches` returns a plain `boolean`, so the `if` tells TypeScript nothing about `body`, which stays `unknown`. Give `matches` a type predicate as its return type, `value is ...`, with the type that `Infer` computes from the schema."
+TS2344 = "A type test is false: compare `found` with `expected`. `Infer<S>` must give one property per field of the schema, with the TypeScript type that its kind names."
+
 # -------------------- 19_template_literal_types.toml --------------------
 
 # TEMPLATE LITERAL TYPES
@@ -1514,11 +1540,11 @@ TS2353 = "`ParamName` doesn't find this path's param names yet, so the params ob
 name = "template_literals4"
 dir = "19_template_literal_types"
 hint = """
-Work in two steps. First, a mapped type over the keys of `T` whose value, for each key
-`K`, is that key's paths. Then index that mapped type with its own keys, like
-`T[keyof T]` in chapter 15, to collect every value into one union. For each key, test
-`T[K]`: a string ends the path, anything else needs a template literal type that calls
-`MessageKey` on `T[K]`. A template can't hold symbol keys: loop over `keyof T & string`.
+Work in two steps, like `StringKeys` above the TODO. First, a mapped type over the keys of
+`T` whose value, for each key `K`, is that key's paths. Then index that mapped type with its
+own keys to collect every value into one union. For each key, test `T[K]`: a string ends
+the path, anything else needs a template literal type that calls `MessageKey` on `T[K]`.
+A template can't hold symbol keys: loop over `keyof T & string`.
 https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html
 https://www.typescriptlang.org/docs/handbook/2/indexed-access-types.html"""
 
@@ -1532,15 +1558,17 @@ TS2322 = "A placeholder `${...}` in a template literal type only takes string-li
 name = "async1"
 dir = "20_async"
 hint = """
-`ReturnType<typeof fetchProfile>` is a `Promise<...>`. Which utility type unwraps it, the way
-`await` unwraps a value?
-In `greet`, an async function's return type is always a `Promise` of something. And the
-profile is only there once the promise resolves: what keyword waits for it?
-https://www.typescriptlang.org/docs/handbook/utility-types.html#awaitedtype"""
+An async function's return type is always a `Promise` of something: that goes for `greet`,
+and for the loaders the tests pass to it, like `fetchProfile`. Write the type of
+`loadProfile` the way you would describe `fetchProfile`: what it takes, and what it returns.
+Then the profile is only there once the promise resolves: what keyword waits for it?
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function"""
 
 [exercises.error_notes]
-TS18046 = "`Profile` is still `unknown`, so TypeScript won't let you read `.plan`. Don't narrow here: define `Profile` as what `fetchProfile` resolves to, and the property becomes available."
-TS2339 = "`fetchProfile` returns a Promise of a profile, not a profile, and a Promise doesn't have the profile's properties. The profile only exists once the promise resolves: wait for it with `await`."
+TS1064 = "An async function always returns a Promise, whatever its body returns. Its return type is `Promise<...>` of the type the body returns."
+TS2345 = "A Promise of a profile is not a profile. On a call to `greet`, the loader passed in is async, but the type of `loadProfile` says it returns the profile itself: fix that type, not the test. Inside `greet`, the profile isn't there yet: wait for it with `await`."
+TS2739 = "`profile` is a Promise of a profile, and a Promise has none of the profile's fields. The profile only exists once the promise resolves: wait for it with `await`."
+TS2339 = "`loadProfile` returns a Promise of a profile, not a profile, and a Promise doesn't have the profile's properties. The profile only exists once the promise resolves: wait for it with `await`."
 
 [[exercises]]
 name = "async2"
@@ -1594,7 +1622,9 @@ hint = """
 Destructure them, and the `let` and the `new Promise(...)` can go.
 Then listen to the signal's "abort" event with `addEventListener`: in the listener, forget the
 pending call and reject with the signal's reason.
-An already-aborted signal never fires "abort" again, so check `signal.aborted` before sending.
+An already-aborted signal never fires "abort" again, so check `signal.aborted` before sending,
+and return `Promise.reject(signal.reason)`. Don't throw (`signal.throwIfAborted()` throws):
+callers of a function that returns a promise expect every failure to come through it.
 https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/withResolvers
 https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal"""
 
@@ -1666,13 +1696,19 @@ TS18046 = "A side effect of the error just before: TypeScript can't tell what `A
 name = "satisfies1"
 dir = "22_advanced_patterns"
 hint = """
-Write the table without an annotation and put `satisfies Record<string, Route>` after the
-closing brace. Do the same for `notFound` with `satisfies Route`: TypeScript then tells you
-what the assertion was hiding.
+- `routes`: drop the annotation and put `satisfies Record<string, Route>` after the closing
+  brace. That keeps the keys, but `Route` says `path: string`, so the paths still widen:
+  `as const` in front of `satisfies` keeps them.
+- `notFound`: `satisfies Route`, and TypeScript tells you what the assertion was hiding.
+- `current` must accept any route: of the three tools, only one gives it that wider type.
 https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html#the-satisfies-operator"""
 
 [exercises.error_notes]
 TS2345 = "`routes` is annotated as `Record<string, Route>`, so TypeScript forgets which keys the table has: any string is a valid key, and any lookup might find nothing. Don't patch it here with `?.`: let TypeScript infer the table, and check it with `satisfies` instead."
+TS2344 = "A type test is false: compare `found` with `expected`. If a path is `string`, `satisfies` alone widened it, because `Route` says `path: string`: write `as const` in front of `satisfies`. If `current` has the type of `notFound`, it needs the wider type."
+TS2741 = "That's what `as Route` was hiding: the fallback has no `auth` field, so `notFound.auth` was `undefined` at runtime. Add the field."
+TS2339 = "`notFound` has no `auth` field, and with `satisfies` its type is exactly what the object holds. Add `auth` to the object itself (see the error on `satisfies Route`)."
+TS2322 = "`current` was inferred from `notFound`, so its type is that one route: `method: \"GET\"`, `auth: false`. No other route fits. A variable that will hold any route needs the wider `Route` type, and that's the job of an annotation."
 
 [[exercises]]
 name = "brands1"
@@ -1696,12 +1732,13 @@ hint = """
 Overload signatures go right above the implementation, with the same name and no body:
 `function getSetting(name: string): string | undefined;` and a second one that takes a
 `fallback: string` and returns `string`. Keep the implementation as it is.
-For `toCents`, delete both overload lines: the implementation's signature already says it all.
+For `toMilliseconds`, delete both overload lines: the implementation's signature already says
+it all.
 https://www.typescriptlang.org/docs/handbook/2/functions.html#function-overloads"""
 
 [exercises.error_notes]
 TS18048 = "`getSetting` has a single signature that returns `string | undefined`, even when you pass a fallback. Don't patch the caller with `?.` or `??`: give `getSetting` an overload that says a call with a fallback returns `string`."
-TS2769 = "`price` is `number | string`, and no single overload accepts that union: one takes a number, the other a string. Overloads that all return the same type are better written as one signature with a union parameter."
+TS2769 = "The argument is a string (the setting) or a number (the default, when there is no setting). No single overload accepts that union, since one takes a number and the other a string. Overloads that all return the same type are better written as one signature with a union parameter."
 
 [[exercises]]
 name = "noinfer1"
@@ -1768,7 +1805,7 @@ type argument types the recorded calls. Pick a rate other than 1, or a converter
 the rate would still pass your checks. `await convert(1000, "USD")` then gives a `Price` you
 can compare with `assert.deepEqual`. For the last check, pass the promise itself:
 `await assert.rejects(convert(-5, "USD"))`.
-https://nodejs.org/api/test.html#mocking"""
+https://nodejs.org/docs/latest-v24.x/api/test.html#mocking"""
 
 [exercises.error_notes]
 TS2345 = "`mock.fn()` without an argument creates a function that returns `undefined`, but the converter needs one that returns a `Promise<number>`. Pass `mock.fn` a fake implementation: an async function that returns an exchange rate."
@@ -1782,12 +1819,14 @@ Copy the shape of the first test: `Expect<Equal<Settings["region"], Region>>`, a
 for `tags`. Both fail, and that's the point: they found two bugs. The ternary's result is
 widened to `string` inside the object literal, and `raw.tags` is `any` because `JSON.parse`
 returns `any`. Giving the function a return type fixes the first; the second also needs a real
-check of the tags (`Array.isArray`, then keep only the strings). Annotate `raw` with `unknown`
-fields so no `any` leaks into that check."""
+check of the tags (`Array.isArray`, then keep only the strings). So that no `any` leaks into
+that check, assign the parsed JSON to `unknown`, then narrow it to an object. A type whose
+fields are all optional and `unknown`, like `{ tags?: unknown }`, accepts any object."""
 
 [exercises.error_notes]
 TS2344 = "A type test is false. On `_count`, it means `_tests` doesn't have one test per comment yet. On one of your tests, or on `_spec`, it means `parseDeploySettings` doesn't match the spec in the comments: fix the function, not the test."
-TS7006 = "`raw` is `any`, because that's what `JSON.parse` returns, so everything read from it is `any` too, and this callback gets no parameter type. Stop the `any` at the source: annotate `raw`, for example `const raw: { tags?: unknown } = JSON.parse(json)` with all three fields."
+TS7006 = "`raw` is `any`, because that's what `JSON.parse` returns, so everything read from it is `any` too, and this callback gets no parameter type. Stop the `any` at the source: assign it to `unknown` (`const raw: unknown = JSON.parse(json)`), then narrow it to an object."
+TS18046 = "`raw` is `unknown`, so TypeScript wants proof before you read a field: `JSON.parse` may just as well return `null` or a number. Check that `raw` is an object and not `null`. Then read its fields as `unknown` values, and check each one before use."
 
 [[exercises]]
 name = "tests3"
@@ -1812,8 +1851,9 @@ strict_lint = true
 hint = """
 Replace each `var` with `const`, or with `let` if the variable is reassigned. `i++` reassigns
 `i`; `readers.push(...)` changes the array but doesn't reassign `readers`.
-The test fails while `column` is a `var`: all three readers share it, so they all read the
-last column. https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/let"""
+Lint errors stop the check before the test runs, so you won't see the bug itself: with
+`column` as a `var`, all three readers share it, and the line comes out as "pro,pro,pro".
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/let"""
 
 [exercises.error_notes]
 no-var = "A `var` belongs to the whole function, not to its block. In this loop, `column` is ONE variable shared by every iteration, so every closure reads the last column. `let` and `const` give each iteration its own binding. Use `const` unless the variable is reassigned."
@@ -1825,7 +1865,7 @@ strict_lint = true
 hint = """
 Swap `!=` for `!==` and `==` for `===`, except where the other side is `null`: `value == null`
 is allowed, and it's the clearest way to check for both `null` and `undefined`.
-https://developer.mozilla.org/en-US/docs/Web/JavaScript/Equality_comparisons_and_sameness"""
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Equality_comparisons_and_sameness"""
 
 [exercises.error_notes]
 eqeqeq = "`==` and `!=` convert both sides first: `0 != \"\"` is false, because `\"\"` becomes 0. Use `===` and `!==`, which never convert. Only `x == null` is allowed, because it checks for `null` and `undefined` at once."
@@ -1837,13 +1877,13 @@ strict_lint = true
 hint = """
 Every `let` that's never reassigned becomes `const`, including the loop variable of `for...of`.
 `total += ...` is a reassignment, so `total` stays `let`.
-For the `!`, keep the result of `prices.get(...)` in a variable, check it for `undefined`, and
-throw an `Error` with the message the test expects. After the check, TypeScript knows it's a
-number."""
+For the `!`, keep the result of `hourlyRates.get(...)` in a variable, check it for
+`undefined`, and throw an `Error` with the message the test expects. After the check,
+TypeScript knows it's a number."""
 
 [exercises.error_notes]
-TS2322 = "`let size = \"M\"` gives `size` the type `string`, because a `let` can be reassigned to any other string later. A `string` doesn't fit `Size`. The `prefer-const` error below points at the declaration, one line up: with `const`, the type is the literal `\"M\"`."
-no-non-null-assertion = "`prices.get()` returns `undefined` for an unknown SKU, and `!` only silences that. Here it turns into `undefined + 0`, so the total is `NaN`. Check the value and throw a clear error instead."
+TS2322 = "`let shift = \"day\"` gives `shift` the type `string`, because a `let` can be reassigned to any other string later. A `string` doesn't fit `Shift`. The `prefer-const` error below points at the declaration, one line up: with `const`, the type is the literal `\"day\"`."
+no-non-null-assertion = "`hourlyRates.get()` returns `undefined` for a project without a rate, and `!` only silences that. Here it turns into `undefined + 0`, so the amount is `NaN`. Check the value and throw a clear error instead."
 
 # -------------------- quiz4.toml --------------------
 
@@ -1852,12 +1892,17 @@ name = "quiz4"
 dir = "quizzes"
 hint = """
 (1) A built-in utility type keeps the members of a union that fit a shape: `{ type: Type }`.
-(2) Each reducer returns a new cart with `{ ...cart, ... }`; `event` is already narrowed.
-(3) `for await (const event of events)`, and keep the current cart in a `let`.
-(4) Map over `Event["type"]` and rename each key with `as` and a template literal type."""
+(2) One `Expect<Equal<Found, Expected>>` per test, separated by a comma.
+(3) Each reducer returns a new cart with `{ ...cart, ... }`; `event` is already narrowed.
+(4) Check that the value is an object with a `type`, then `switch` on `value.type` and check the
+    fields of that event with `"field" in value` and `typeof`.
+(5) `for await (const line of lines)`, the current cart in a `let`. Put only `JSON.parse` in
+    the `try`, and let `isCartEvent` narrow its `unknown` result.
+(6) Map over `Event["type"]` and rename each key with `as` and a template literal type."""
 
 [exercises.error_notes]
 TS18046 = "`event` is `unknown` because `EventOf` is still `unknown` (TODO 1). Once `EventOf<Type>` picks the right member of `CartEvent`, each reducer knows exactly which event it gets."
-TS2739 = "`Reducers` has one entry per event type, so the object must handle all of them. That's TODO 2: TypeScript lists the missing ones."
-TS7053 = "On `reducers[event.type]`, this comes from `event` being `unknown`, and goes away with TODO 1. On `counts[...]`, `EventCounts` is still `{}` (TODO 4), so it has no counter keys to index."
+TS2739 = "`Reducers` has one entry per event type, so the object must handle all of them. That's TODO 3: TypeScript lists the missing ones."
+TS7053 = "On `reducers[event.type]`, this comes from `event` being `unknown`, and goes away with TODO 1. On `counts[...]`, `EventCounts` is still `{}` (TODO 6), so it has no counter keys to index."
 TS2339 = "`EventOf` is still `unknown` (TODO 1), and `unknown` has no `type` property."
+TS2344 = "A type test is false: compare `found` with `expected`. On `_eventOfCount`, `_eventOfTests` doesn't hold your two type tests yet (TODO 2). On one of them, `EventOf` isn't right yet (TODO 1); at the end of the file, `EventCounts` isn't (TODO 6)."

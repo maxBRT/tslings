@@ -1,4 +1,5 @@
-// Money helpers, shared by the exercises of this chapter. You don't need to edit this file.
+// Provided by tslings and restored before each check, so don't edit this file.
+// Money helpers, shared by the exercises of this chapter.
 
 export type Currency = "EUR" | "USD" | "GBP";
 

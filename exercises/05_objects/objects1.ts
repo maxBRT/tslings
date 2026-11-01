@@ -4,11 +4,12 @@
 //   interface Coupon { code: string; percentOff: number }
 //   type Coupon = { code: string; percentOff: number };
 //
-// For plain object shapes both work. A common convention: `interface` for
-// object shapes, since they can grow with `extends`; `type` for everything an
-// interface can't express, like unions (`type Size = "s" | "m"`). Type aliases
-// combine object types with `&`, an intersection: a value of type `A & B` has
-// every property of `A` and every property of `B`.
+// For plain object shapes both work: teams pick one and stick to it, and
+// tslings uses both. Each also has things only it can do. An `interface` can
+// build on another one with `extends`, which reports a property that conflicts
+// with the parent. A `type` alias can name any type, like a union
+// (`type Size = "s" | "m"`) or an intersection, written with `&`: a value of
+// type `A & B` has every property of `A` and every property of `B`.
 //
 // Describe the products of an online shop.
 

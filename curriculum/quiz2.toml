@@ -6,7 +6,8 @@ dir = "quizzes"
 hint = """
 `applyEvent`: `switch (event.type)`, check `order.status` in each `case`, return
 `undefined` for refused moves, and end with a `never` check. `...order` copies
-every field, so only spread when you want all of them.
+every field, so only spread when you want all of them: TypeScript doesn't flag
+extra fields that come from a spread, but the tests compare the whole object.
 `processEvents`: `new Map(orders)` makes a copy; `get` can return `undefined`.
 `findOrder`: `typeof query` tells the two kinds of query apart, and only shipped
 orders have a tracking number."""

@@ -43,14 +43,15 @@ export class WatchState {
       write(`\nChecking the exercise \`${appState.currentExercise.name}\`. Please wait…\n`);
       this.#showHint = false;
 
-      appState.restoreCurrentExerciseFiles();
+      const restored = appState.restoreCurrentExerciseFiles(stdoutColor);
       const exercise = appState.currentExercise;
       // The editor opens while the exercise is checked.
       const [, { success, output }] = await Promise.all([
         appState.openEditor(),
         appState.runner.runExercise(exercise, { color: stdoutColor }),
       ]);
-      this.#output = output.trimEnd() === "" ? "" : `${output.trimEnd()}\n\n`;
+      const shown = `${restored}${output}`.trimEnd();
+      this.#output = shown === "" ? "" : `${shown}\n\n`;
 
       if (success) {
         this.#doneStatus = { done: true, solutionPath: appState.currentSolutionPath() };
