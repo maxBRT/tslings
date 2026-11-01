@@ -1,0 +1,57 @@
+# NULL HANDLING
+
+[[exercises]]
+name = "nulls1"
+dir = "09_null_handling"
+hint = """
+Put `?.` right after the part that may be missing: `repo.license?.spdxId`.
+It works before a method call too (`maybeText?.trim()`), and before the
+parentheses of a call: `maybeFunction?.(argument)`.
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Optional_chaining"""
+
+[exercises.error_notes]
+TS18047 = "This value is `null` for some repositories, and reading a property of `null` crashes. Write `?.` instead of `.` right after it: when the value is `null` (or `undefined`), the whole expression stops and gives `undefined`."
+TS2722 = "`onSynced` is an optional parameter, so it's `undefined` when the caller leaves it out, and calling `undefined` crashes. Optional chaining works for calls too: `onSynced?.(...)` only calls the function if there is one."
+
+[[exercises]]
+name = "nulls2"
+dir = "09_null_handling"
+hint = """
+Use `??` for each default. `||` compiles too, but the second test shows what it
+does to 0 and "".
+For the cache, `a ??= b` only assigns when `a` is null or undefined, and the
+whole expression's value is what `a` holds afterwards, so you can return it
+directly.
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing_assignment"""
+
+[exercises.error_notes]
+TS2322 = "This value can be `undefined` (an option the caller left out, or a cache entry that doesn't exist yet), but the type it goes into needs a real value. For a default, use `??`, which only replaces `null` and `undefined` (`||` would also replace 0 and \"\"). To fill in a missing entry the first time, use `??=`."
+
+[[exercises]]
+name = "nulls3"
+dir = "09_null_handling"
+hint = """
+In `requireEnv`, read `env[name]` into a `const`, `throw` when it's `undefined`
+or `""`, and return it after the check: it's a `string` by then.
+In `loadConfig`, each `!` gets a different fix: `??` with the default for PORT
+and LOG_LEVEL, and nothing at all for SENTRY_DSN, whose type already allows
+`undefined`.
+https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#non-null-assertion-operator-postfix-"""
+
+[exercises.error_notes]
+no-non-null-assertion = "`!` only silences TypeScript: at runtime the value is still `undefined` when the variable isn't set. Pick an honest fix for each one: a default with `??`, a check that throws with a clear message, or no `!` at all when the type already allows `undefined`."
+
+[[exercises]]
+name = "nulls4"
+dir = "09_null_handling"
+hint = """
+Change `findProduct`'s return type to `Product | undefined`. TypeScript then
+reports every caller that assumed a product: `getProduct` checks the result
+and throws, `searchResult` checks it and returns the "No product" message.
+`lineTotalCents` needs no change: `getProduct` always returns a `Product`.
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/find"""
+
+[exercises.error_notes]
+TS2322 = "`find` returns `undefined` when nothing matches, so a function that returns its result can't promise a `Product`. Either the return type says `| undefined`, or the function checks the result and throws before returning."
+TS18048 = "Now that `findProduct` can return `undefined`, this caller has to handle that case before reading the product: check it, and return the \"No product with code ...\" message when it's missing."
+TS2344 = "A type-level test failed: `findProduct` must say in its return type that it may find nothing (`Product | undefined`), while `getProduct` returns a plain `Product` because it throws instead."

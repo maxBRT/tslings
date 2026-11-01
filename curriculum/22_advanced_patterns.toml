@@ -1,0 +1,94 @@
+[[exercises]]
+name = "satisfies1"
+dir = "22_advanced_patterns"
+hint = """
+Write the table without an annotation and put `satisfies Record<string, Route>` after the
+closing brace. Do the same for `notFound` with `satisfies Route`: TypeScript then tells you
+what the assertion was hiding.
+https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html#the-satisfies-operator"""
+
+[exercises.error_notes]
+TS2345 = "`routes` is annotated as `Record<string, Route>`, so TypeScript forgets which keys the table has: any string is a valid key, and any lookup might find nothing. Don't patch it here with `?.`: let TypeScript infer the table, and check it with `satisfies` instead."
+
+[[exercises]]
+name = "brands1"
+dir = "22_advanced_patterns"
+hint = """
+Brand each type with its own `__brand` literal, like the example at the top. Then `return raw`
+no longer compiles, because a plain string isn't a `UserId`. Move each regex test into a type
+guard whose return type is `raw is UserId` (or `OrderId`), and call it in the parse function:
+after the check, TypeScript narrows `raw` to the branded type.
+https://www.typescriptlang.org/docs/handbook/2/narrowing.html#using-type-predicates"""
+
+[exercises.error_notes]
+TS2344 = "These checks say that a plain `string` must not fit where a `UserId` is expected, and that a `UserId` must not fit where an `OrderId` is expected. Right now both are just `string`. Give each one its own brand."
+TS2322 = "That's the brand doing its job: a plain `string` is not a branded ID. Don't reach for `as`. Write a type guard that runs the check and says `raw is UserId` (or `OrderId`), and use it here."
+TS2345 = "The brands found a real bug: this call passes one kind of ID where the other is expected. Look at the order of the parameters."
+
+[[exercises]]
+name = "overloads1"
+dir = "22_advanced_patterns"
+hint = """
+Overload signatures go right above the implementation, with the same name and no body:
+`function getSetting(name: string): string | undefined;` and a second one that takes a
+`fallback: string` and returns `string`. Keep the implementation as it is.
+For `toCents`, delete both overload lines: the implementation's signature already says it all.
+https://www.typescriptlang.org/docs/handbook/2/functions.html#function-overloads"""
+
+[exercises.error_notes]
+TS18048 = "`getSetting` has a single signature that returns `string | undefined`, even when you pass a fallback. Don't patch the caller with `?.` or `??`: give `getSetting` an overload that says a call with a fallback returns `string`."
+TS2769 = "`price` is `number | string`, and no single overload accepts that union: one takes a number, the other a string. Overloads that all return the same type are better written as one signature with a union parameter."
+
+[[exercises]]
+name = "noinfer1"
+dir = "22_advanced_patterns"
+hint = """
+Only one type in the signature of `defineExperiment` changes: the one TypeScript should check
+but not infer from. `NoInfer` is a built-in type, like `Partial`, so there's nothing to import.
+Once it's in place, the call at the bottom of the code stops compiling, and the error shows
+the typo.
+https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-4.html#the-noinfer-utility-type"""
+
+[exercises.error_notes]
+TS2344 = "TypeScript inferred `Variant` from the variants AND from the fallback, so a fallback that is not in the list simply becomes one more variant (hover `checkout` to see it). Keep the fallback out of inference."
+TS2345 = "Now that `Variant` comes from the list alone, the fallback is checked against it. Compare it with the comment above the call."
+
+[[exercises]]
+name = "variadic1"
+dir = "22_advanced_patterns"
+hint = """
+`fn` takes the bound arguments first, then the rest. As a tuple type, that's `Bound` spread
+into a tuple followed by `Rest` spread into it: `[...A, ...B]`. Use that tuple as the type of
+`fn`'s rest parameter. Nothing else needs to change.
+https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-0.html#variadic-tuple-types"""
+
+[exercises.error_notes]
+TS2345 = "`fn` is typed to accept any number of `unknown` arguments, and a function whose parameters are strings or numbers can't promise that. Type `fn`'s parameter list as the bound arguments followed by the rest, so TypeScript matches it against the real parameters."
+
+[[exercises]]
+name = "using1"
+dir = "22_advanced_patterns"
+hint = """
+A disposable class has a method whose name is the symbol itself: `[Symbol.dispose](): void { ... }`.
+The async version is `async [Symbol.asyncDispose](): Promise<void> { ... }`. A transaction is
+disposed after a successful commit too, so check `#finished` before rolling back.
+In `importOrders`, `await using transaction = await connection.begin();` replaces the `const`.
+https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-2.html#using-declarations-and-explicit-resource-management"""
+
+[exercises.error_notes]
+TS2741 = "`using` only accepts values that know how to clean themselves up: objects with a `[Symbol.dispose]()` method (the built-in `Disposable` interface). Add that method to the class; it can simply call `release()`."
+TS2851 = "`await using` needs a value with a `[Symbol.asyncDispose]()` method (or a `[Symbol.dispose]()` one). That's the second TODO: give `Transaction` an async dispose method that rolls back unfinished work."
+
+[[exercises]]
+name = "augment1"
+dir = "22_advanced_patterns"
+extra_files = ["http.ts"]
+hint = """
+Write a `declare module "./http.ts" { ... }` block in `augment1.ts` (not in `http.ts`), and
+inside it re-declare `interface HttpRequest` with only the new member. Not every request has a
+user, so make the property optional. You can refer to the local `User` type inside the block.
+https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation"""
+
+[exercises.error_notes]
+TS2339 = "`HttpRequest` comes from `./http.ts`, which knows nothing about users. Don't edit the library: declare the extra property from this file with a module augmentation, and TypeScript merges it into the library's interface."
+TS2741 = "A request is created before `authenticate` runs, so it has no user yet. Make `user` optional in your augmentation."

@@ -1,0 +1,43 @@
+[[exercises]]
+name = "tests1"
+dir = "23_type_testing"
+hint = """
+`mock.fn<FetchRate>(async () => 1.1)` creates a fake `fetchRate` that always answers 1.1; the
+type argument types the recorded calls. Pick a rate other than 1, or a converter that inverts
+the rate would still pass your checks. `await convert(1000, "USD")` then gives a `Price` you
+can compare with `assert.deepEqual`. For the last check, pass the promise itself:
+`await assert.rejects(convert(-5, "USD"))`.
+https://nodejs.org/api/test.html#mocking"""
+
+[exercises.error_notes]
+TS2345 = "`mock.fn()` without an argument creates a function that returns `undefined`, but the converter needs one that returns a `Promise<number>`. Pass `mock.fn` a fake implementation: an async function that returns an exchange rate."
+TS2493 = "The mock's type comes from the fake you gave it, and `async () => 1.1` takes no parameters, so each recorded call has `arguments: []`. Give the mock the real function type: `mock.fn<FetchRate>(async () => 1.1)`."
+
+[[exercises]]
+name = "tests2"
+dir = "23_type_testing"
+hint = """
+Copy the shape of the first test: `Expect<Equal<Settings["region"], Region>>`, and the same
+for `tags`. Both fail, and that's the point: they found two bugs. The ternary's result is
+widened to `string` inside the object literal, and `raw.tags` is `any` because `JSON.parse`
+returns `any`. Giving the function a return type fixes the first; the second also needs a real
+check of the tags (`Array.isArray`, then keep only the strings). Annotate `raw` with `unknown`
+fields so no `any` leaks into that check."""
+
+[exercises.error_notes]
+TS2344 = "A type test is false. On `_count`, it means `_tests` doesn't have one test per comment yet. On one of your tests, or on `_spec`, it means `parseDeploySettings` doesn't match the spec in the comments: fix the function, not the test."
+TS7006 = "`raw` is `any`, because that's what `JSON.parse` returns, so everything read from it is `any` too, and this callback gets no parameter type. Stop the `any` at the source: annotate `raw`, for example `const raw: { tags?: unknown } = JSON.parse(json)` with all three fields."
+
+[[exercises]]
+name = "tests3"
+dir = "23_type_testing"
+allow_lints = ["no-ts-comment"]
+hint = """
+Write `// @ts-expect-error` (optionally followed by `: why it must fail`) on its own line,
+right above each misuse. Then look at the directive TypeScript says is unused: that call
+compiles, so `set`'s types are too loose. `State[keyof State]` is the union of every value
+type. Give `set` its own type parameter for the key, the way `get` has one."""
+
+[exercises.error_notes]
+TS2345 = "This line is a misuse on purpose: the test is that it must NOT compile. Don't change the call; mark it with `// @ts-expect-error` on the line above."
+TS2578 = "This directive expects an error on the next line, but that line compiles: `createStore` accepts a boolean for `fontSize`. The type test just caught a bug. Fix the signature of `set` so the value's type depends on the key."

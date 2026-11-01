@@ -1,0 +1,20 @@
+# QUIZ 3
+
+[[exercises]]
+name = "quiz3"
+dir = "quizzes"
+hint = """
+- `Table`: `class Table<T extends { id: string }>`, then use `T` for rows.
+- `update`: combine two utility types for `changes`. Build the updated record
+  with spread syntax, so the stored object isn't mutated.
+- `where`: a second type parameter `K` for the key, and `T[K]` for the value.
+- `NewBook`: one utility type applied to `Book`.
+- `parseNewBook`: check `typeof body === "object"` (and not `null`), then use
+  `"title" in body` to make `body.title` accessible before checking its type.
+  A small type guard helps for the tags."""
+
+[exercises.error_notes]
+TS18046 = "`Table` stores `unknown` rows, so TypeScript can't read their fields (`row.id`, `author.name`). Give the class a type parameter for the record type, constrained to have a string `id`, and use it instead of `unknown`."
+TS2315 = "The tests use `Table<Book>`, so `Table` needs a type parameter for the type of record it stores."
+TS2558 = "The tests pass a type argument (`new Table<Book>()`), but `Table` doesn't declare a type parameter yet."
+TS7006 = "Don't annotate the test: this callback gets its parameter type from what `where` returns. Once `Table` is generic and `where` returns `T[]`, `book` is typed on its own."

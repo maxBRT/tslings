@@ -1,0 +1,64 @@
+[[exercises]]
+name = "modules1"
+dir = "14_modules"
+extra_files = ["money.ts"]
+hint = """
+Two separate fixes, one after the other:
+1. Node takes the path literally, so it needs the real file name, extension included.
+2. Then TypeScript points at the names that are only types. Look in money.ts for which
+   exports are `type`/`interface` and which are functions, and move the types into an
+   `import type { ... }` line (or mark each one inline: `{ type Name }`).
+https://www.typescriptlang.org/tsconfig/#verbatimModuleSyntax"""
+
+[exercises.error_notes]
+TS2835 = "Node runs this `.ts` file as it is, so the import must name the real file: `./money.ts`. (TypeScript suggests `.js` because compiled projects import the `.js` file the compiler will produce. Here nothing is compiled.)"
+
+[[exercises]]
+name = "modules2"
+dir = "14_modules"
+extra_files = ["money.ts", "dates.ts", "slugify.ts"]
+hint = """
+A file can only have one binding called `format`, so give each imported `format` its own local
+name with `{ original as local }`. The code below tells you which local names it expects.
+For slugify.ts, look at how it exports its function: a default export is imported without
+braces. TypeScript's error message on that line spells out the syntax.
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import"""
+
+[exercises.error_notes]
+TS2300 = "Both imports create a local binding called `format`, and a module can't have two things with the same name. Rename them as you import them: `import { format as someOtherName } from ...`."
+TS2552 = "Nothing called this has been imported yet. Ignore the spelling suggestion: this is the local name the code expects for one of the `format` functions. Create it with `as` in the import."
+TS2304 = "Nothing called this has been imported yet. This is the local name the code expects for one of the `format` functions. Create it with `as` in the import."
+
+[[exercises]]
+name = "modules3"
+dir = "14_modules"
+hint = """
+The tests read everything through `flags.`, so they only see this file's exports.
+`export` works in front of a `type` declaration exactly like in front of a function.
+For `isEnabled`, keep the `export` but drop the word that makes it the default export.
+`bucketOf` only needs to lose its `export`. The last test checks the exact list of exports.
+https://www.typescriptlang.org/docs/handbook/2/modules.html"""
+
+[exercises.error_notes]
+TS2339 = "The tests import this file as `flags`, so `flags.something` only exists if this file exports `something` by name. A default export shows up as `flags.default`, whatever the function is called."
+TS2694 = "`flags.Flag` only exists if this file exports a type called `Flag`. Types are exported like values: put `export` in front of the declaration."
+TS2344 = "The first check needs `Flag` to be exported, unchanged. The second checks the exact list of values this file exports: `ROLLOUT` and `isEnabled`, with no `default` and no `bucketOf`."
+
+[[exercises]]
+name = "modules4"
+dir = "14_modules"
+extra_files = ["money.ts", "dates.ts"]
+hint = """
+Write one re-export line per source module, listing names in braces: `export { a, b } from ...`.
+Rename on the way out with `original as published`, like in an import.
+Types can't go in a plain `export { }` line, because Node erases types and would then look
+for a value that doesn't exist. Give them their own `export type { ... } from ...` line.
+`assertSameCurrency` is internal: don't publish it.
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/export"""
+
+[exercises.error_notes]
+TS2308 = "money.ts and dates.ts both export `format`, so `export *` can't publish both under one name. (JavaScript would silently drop the ambiguous name.) List the names you want explicitly, and rename with `as`: `export { format as newName } from ...`."
+TS2339 = "The tests import this file as `billing`, so `billing.something` only exists if this file exports or re-exports `something` under that exact name."
+TS2694 = "`billing.SomeType` only exists if this file re-exports that type: `export type { SomeType } from ...`."
+TS1205 = "Node erases types file by file, and keeps every name in a plain `export { } from` line. It would then look for a value with this name in money.ts and crash. Move the types to their own line, `export type { ... } from \"./money.ts\";`, or mark each one inline: `{ type Money }`."
+TS2344 = "This checks the exact list of values the file exports (types don't count). Compare it with the TODO: something is missing, or an `export *` still publishes extra names such as `format` or `assertSameCurrency`."

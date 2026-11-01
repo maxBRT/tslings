@@ -1,0 +1,67 @@
+# KEYOF AND TYPEOF
+
+[[exercises]]
+name = "keyof1"
+dir = "15_keyof_typeof"
+hint = """
+In a type position, `typeof` followed by the name of a variable gives that
+variable's type. `type Settings = typeof SOMETHING;` is a complete type alias:
+delete the interface and write one.
+
+You could also add the missing fields by hand, but then the next field someone
+adds to the defaults would drift again.
+https://www.typescriptlang.org/docs/handbook/2/typeof-types.html"""
+
+[exercises.error_notes]
+TS2339 = "`Settings` was written by hand, and nobody updated it when the defaults grew. Instead of patching the copy, derive the type from the value: `typeof` works in type positions too."
+
+[[exercises]]
+name = "keyof2"
+dir = "15_keyof_typeof"
+hint = """
+`keyof` takes a type, and `MESSAGES` is a value: turn it into a type with
+`typeof` first, then take its keys. `keyof typeof MESSAGES` reads inside out.
+
+For the message keys, take the keys of one locale's object. `typeof` accepts a
+dotted path to a property, like `typeof MESSAGES.en`.
+https://www.typescriptlang.org/docs/handbook/2/keyof-types.html"""
+
+[exercises.error_notes]
+TS7053 = "`MESSAGES` only has the keys `en` and `fr`, but `locale` is typed as any string, so the lookup could miss. Give `Locale` a type that only allows the keys of `MESSAGES` (and do the same for `MessageKey`)."
+
+[[exercises]]
+name = "keyof3"
+dir = "15_keyof_typeof"
+hint = """
+- `Plan`: `typeof PLANS` is a tuple type. Index it with `number` to get the
+  union of its elements: `(typeof PLANS)[number]`.
+- `StatusLabel`: index the type of STATUS_LABELS with the union of its own keys.
+- `BillingInterval`: index `Subscription` with "billing", then with "interval",
+  like you would chain property accesses.
+
+Once `BillingInterval` is precise, TypeScript points at a bug in
+`chargesPerYear`. Fix the bug, not the type.
+https://www.typescriptlang.org/docs/handbook/2/indexed-access-types.html"""
+
+[exercises.error_notes]
+TS2322 = "The hand-written `Plan` union doesn't list \"enterprise\", but PLANS does. Derive `Plan` from PLANS with an indexed access type, so the list and the type can't disagree again."
+TS2344 = "This type is still `string`, or a hand-written union. Derive it with an indexed access type: `SomeType[\"property\"]`, `SomeTuple[number]` or `SomeType[keyof SomeType]`."
+TS2367 = "Now that `interval` is `\"month\" | \"year\"` instead of `string`, TypeScript can see this comparison is never true. That's the bug the precise type was hiding: fix the string being compared."
+
+[[exercises]]
+name = "keyof4"
+dir = "15_keyof_typeof"
+hint = """
+Each function needs a second type parameter for the key, after `T`, whose
+constraint says "one of the keys of `T`". Type `key` with it, then use it again
+inside the indexed access type that describes the value.
+
+Both functions need the same change. The bodies stay as they are.
+https://www.typescriptlang.org/docs/handbook/2/generics.html#using-type-parameters-in-generic-constraints"""
+
+[exercises.error_notes]
+TS2344 = "The test expects the type of ONE field (`number` for \"age\"), but the function only promises `T[keyof T]`, the union of every field type. Make the key a type parameter, `K extends keyof T`, so the types can follow the key that was passed."
+TS2365 = "`age` is `string | number | boolean`: `getField` returns the union of all the field types. Make the return type depend on the key that was passed."
+TS2362 = "`stock` is `string | number`: `getField` returns the union of all the field types, so TypeScript can't know it's a number. Make the return type depend on the key that was passed."
+TS2339 = "`email` is `string | number | boolean`: `getField` returns the union of all the field types, so TypeScript can't know it's a string. Make the return type depend on the key that was passed."
+TS2635 = "The type test fills in two type arguments for `setField`: the record type and the key. `setField` only declares `T` so far: add a second type parameter for the key, after `T`."

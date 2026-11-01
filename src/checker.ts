@@ -147,7 +147,8 @@ export class Checker {
     }
     const program = this.#project.program;
 
-    const configDiagnostics = program.getConfigFileParsingDiagnostics();
+    // TS18003 "No inputs were found" is stale once a file is created after the project was opened.
+    const configDiagnostics = program.getConfigFileParsingDiagnostics().filter((diagnostic) => diagnostic.code !== 18003);
     const syntactic = program.getSyntacticDiagnostics(path);
     const semantic = syntactic.length > 0 ? [] : program.getSemanticDiagnostics(path);
     const problems: Problem[] = [...configDiagnostics, ...syntactic, ...semantic].map(toProblem);

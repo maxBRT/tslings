@@ -1,0 +1,67 @@
+[[exercises]]
+name = "functions1"
+dir = "02_functions"
+hint = """
+A parameter annotation goes after the parameter name: `(name: string, age: number)`.
+Read each function body to see how every parameter is used: text, a number, or a
+yes/no flag? The same syntax works for the arrow function.
+https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#functions"""
+
+[exercises.error_notes]
+TS7006 = "TypeScript doesn't guess parameter types from how the body uses them, so a parameter without an annotation would be `any`, and `strict` forbids that. Write its type after its name, e.g. `quantity: number`."
+TS2344 = "A type test failed: it compares the type of each function with the expected one. Annotate every parameter with the type its body needs, and these tests pass too."
+
+[[exercises]]
+name = "functions2"
+dir = "02_functions"
+hint = """
+A return type annotation goes after the parameter list: `function f(x: number): string {`.
+Once `formatDuration` promises a `string`, TypeScript reports the `return` that breaks the
+promise. Look at what the tests expect for whole minutes."""
+
+[exercises.error_notes]
+TS2339 = "`formatDuration` returns a number on one of its paths, so TypeScript inferred `string | number` as its return type, and a number has no `padStart`. This line is fine: the mistake is inside `formatDuration`. Annotate its return type and TypeScript will report the line that's actually wrong."
+TS2344 = "A type test failed: `formatDuration` must return a `string` on every path."
+TS2322 = "`formatDuration` now promises to return a `string`, and this `return` breaks the promise. Without the annotation, this mistake was only visible as an error in `playlistRow`."
+
+[[exercises]]
+name = "functions3"
+dir = "02_functions"
+hint = """
+A parameter with a default value needs no annotation: `pageSize = 20` (TypeScript infers
+`number` from it). An optional parameter keeps its type and gets a `?`: `search?: string`.
+Optional parameters must come after the required ones.
+https://www.typescriptlang.org/docs/handbook/2/functions.html#optional-parameters"""
+
+[exercises.error_notes]
+TS2554 = "`productsUrl` declares three required parameters, but this call passes fewer. Fix the function's signature, not the calls: make the last two parameters optional."
+TS2344 = "A type test failed: compare the signature of `productsUrl` with the one the test expects. Both `pageSize` and `search` must be optional for callers."
+TS18048 = "With `?`, a parameter is `undefined` when the caller leaves it out, and TypeScript won't let you multiply `undefined`. A default value (`pageSize = 20`) makes it optional and always a number."
+TS2345 = "Passing `undefined` for a parameter that has a default value gives you the default. That only compiles once the parameter is optional."
+
+[[exercises]]
+name = "functions4"
+dir = "02_functions"
+hint = """
+A function type has the shape `(parameter: Type) => ReturnType`.
+A rest parameter collects every remaining argument into an array, so its annotation is
+an array type: `...names: string[]`, here with your `PriceRule` instead of `string`.
+https://www.typescriptlang.org/docs/handbook/2/functions.html#function-type-expressions"""
+
+[exercises.error_notes]
+TS7019 = "A rest parameter collects the remaining arguments into an array, so its type is an array type, like `string[]`. Here it's an array of price rules."
+TS7006 = "An arrow function without annotations gets its parameter types from the function type expected where it's written. Here there isn't one yet: either `PriceRule` is still `unknown`, or `rules` has no type. Fix both and this error disappears, without annotating `price`."
+TS18046 = "`rule` is a `PriceRule`, and `PriceRule` is still `unknown`, so TypeScript doesn't know it can be called. Define `PriceRule` as a function type."
+TS2344 = "A type test failed: `PriceRule` must be a function type that takes a number and returns a number, and `rules` must be an array of `PriceRule`."
+
+[[exercises]]
+name = "functions5"
+dir = "02_functions"
+hint = """
+`push` returns the new length of the array, a number, so `(event) => auditLog.push(event)`
+returns a number too. Which return type means "I won't use the result"?
+https://www.typescriptlang.org/docs/handbook/2/functions.html#return-type-void"""
+
+[exercises.error_notes]
+TS2322 = "`Listener` says that listeners return `undefined`, but `push` returns a number (the array's new length). `emit` never uses what listeners return, so the type is stricter than it needs to be. Change `Listener`, not the listeners."
+TS2344 = "A type test failed: a listener's return type should say \"ignored\", whatever the listener returns."

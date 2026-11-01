@@ -1,0 +1,72 @@
+[[exercises]]
+name = "async1"
+dir = "20_async"
+hint = """
+`ReturnType<typeof fetchProfile>` is a `Promise<...>`. Which utility type unwraps it, the way
+`await` unwraps a value?
+In `greet`, an async function's return type is always a `Promise` of something. And the
+profile is only there once the promise resolves: what keyword waits for it?
+https://www.typescriptlang.org/docs/handbook/utility-types.html#awaitedtype"""
+
+[exercises.error_notes]
+TS18046 = "`Profile` is still `unknown`, so TypeScript won't let you read `.plan`. Don't narrow here: define `Profile` as what `fetchProfile` resolves to, and the property becomes available."
+TS2339 = "`fetchProfile` returns a Promise of a profile, not a profile, and a Promise doesn't have the profile's properties. The profile only exists once the promise resolves: wait for it with `await`."
+
+[[exercises]]
+name = "async2"
+dir = "20_async"
+hint = """
+The problem is on the line that declares `requests`: hover it in your editor to see the array
+type TypeScript inferred. Either hand the array literal to `Promise.all` directly, where
+TypeScript infers a tuple, or turn `requests` into a tuple with `as const`.
+Awaiting each request on its own line would compile, but they would no longer overlap.
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all"""
+
+[exercises.error_notes]
+TS18048 = "`requests` is an array, not a tuple: TypeScript doesn't know it has exactly three elements, so each destructured name might be `undefined`. Nor does it know which type sits at which position. Give `Promise.all` a tuple instead."
+TS2339 = "Each element of `requests` is typed `Account | Order[] | number`, because the array type doesn't remember positions. Give `Promise.all` a tuple and each name gets its own type."
+TS7006 = "A side effect of the errors above: `orders` has no usable type, so this callback can't be typed either. Don't annotate it; it goes away once `Promise.all` gets a tuple."
+TS2322 = "Same root cause: `unread` is typed \"any element of the array, or undefined\". With a tuple, it's a `number`."
+
+[[exercises]]
+name = "async3"
+dir = "20_async"
+hint = """
+`Promise.allSettled` takes the same argument as `Promise.all`; only the result type changes.
+In `summarize`, branch on `result.status`: inside each branch, TypeScript knows whether
+`value` or `reason` exists.
+In `describeError`, narrow `reason` with `instanceof Error` and `typeof ... === "string"`.
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/allSettled"""
+
+[exercises.error_notes]
+TS18046 = "`reason` is `unknown`: it could be an Error, a string, or anything else a promise was rejected with. Check what it is before reading `.message`: `instanceof Error`, `typeof reason === \"string\"`."
+TS2339 = "A settled result is either fulfilled (it has `value`) or rejected (it has `reason`). Check `result.status` first; TypeScript then knows which one you have."
+TS2345 = "`Promise.all` resolves to the plain values, `Receipt[]`, but `summarize` expects one settled result per promise. That's what `Promise.allSettled` gives you."
+
+[[exercises]]
+name = "async4"
+dir = "20_async"
+hint = """
+TypeScript points at the first one: a condition that tests a Promise instead of its result.
+The two others only show up when the tests run:
+- in `withRetry`, the `catch` never sees a failed attempt. What does `return` hand back there?
+- in `checkout`, one async call is started but never waited for.
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/await"""
+
+[exercises.error_notes]
+TS2801 = "`isBlocked` is async, so it returns a Promise. A Promise is an object, and objects are always truthy: this `if` would refuse every customer. Wait for the boolean inside it."
+
+[[exercises]]
+name = "async5"
+dir = "20_async"
+hint = """
+`Promise.withResolvers<string>()` returns the promise together with its `resolve` and `reject`.
+Destructure them, and the `let` and the `new Promise(...)` can go.
+Then listen to the signal's "abort" event with `addEventListener`: in the listener, forget the
+pending call and reject with the signal's reason.
+An already-aborted signal never fires "abort" again, so check `signal.aborted` before sending.
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/withResolvers
+https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal"""
+
+[exercises.error_notes]
+TS2454 = "TypeScript can't know that the `new Promise` callback runs right away, so as far as it can tell `resolve` might still be unassigned here. Don't silence it: `Promise.withResolvers<string>()` gives you the promise and its `resolve` and `reject` functions together, already assigned."

@@ -1,0 +1,70 @@
+[[exercises]]
+name = "errors1"
+dir = "11_error_handling"
+hint = """
+`error instanceof Error` narrows `error` to `Error` inside the `if` (or the `? :` branch).
+For everything else, `String(error)` turns any value into a string.
+Watch the expected reasons in the tests: an `Error` gives its message, not "Error: message".
+https://www.typescriptlang.org/tsconfig/#useUnknownInCatchVariables"""
+
+[exercises.error_notes]
+TS18046 = "Anything can be thrown, so `error` is `unknown`. `error instanceof Error` narrows it to `Error`. Writing `catch (error: Error)` isn't allowed: TypeScript can't know what was thrown."
+TS1196 = "TypeScript can't know what a `try` block throws, so a `catch` variable can only be `unknown`. Keep `catch (error)` and narrow `error` inside the block."
+
+[[exercises]]
+name = "errors2"
+dir = "11_error_handling"
+hint = """
+Fields are declared in the class body (`readonly status: number;`) and set in the constructor
+after `super(...)`. `Error` already has a `name`, so yours needs the `override` keyword.
+In the `catch`, `error instanceof HttpError` narrows `error` so that `error.status` exists.
+Look at the last test: duck typing (checking for a `status` property) isn't enough.
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error#custom_error_types"""
+
+[exercises.error_notes]
+TS18046 = "`error` is `unknown`: it may not be an `HttpError` at all. Narrow it with `instanceof HttpError` before reading `status`."
+TS2339 = "`HttpError` doesn't declare a `status` field yet. Declare it in the class body and set it in the constructor."
+TS2564 = "The `status` field is declared but never set. Assign it in the constructor, after `super(...)`."
+TS4114 = "`Error` already has a `name`, so declaring one in `HttpError` replaces it. With `noImplicitOverride`, a replaced member must say so: put `override` in front, as in `override readonly name = ...`. Chapter 13 explains `override`."
+TS2344 = "The type test at the bottom checks that `HttpError` has a `status` field of type `number` that can't be reassigned (`readonly`)."
+
+[[exercises]]
+name = "errors3"
+dir = "11_error_handling"
+hint = """
+`Error`'s constructor is `(message?: string, options?: ErrorOptions)`. Give `ConfigError`'s
+constructor the same optional second parameter and pass both to `super`.
+For `explain`: when `error` is an `Error`, its `cause` is `unknown`, the same type `explain`
+accepts. A recursive call, or a loop over a `let current: unknown`, follows the chain.
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error/cause"""
+
+[exercises.error_notes]
+TS2554 = "`ConfigError`'s constructor only takes a message, so the `{ cause }` argument has nowhere to go. `Error` itself accepts a second argument of type `ErrorOptions`: add it to `ConfigError`'s constructor and forward it to `super`."
+
+[[exercises]]
+name = "errors4"
+dir = "11_error_handling"
+hint = """
+The errors in the three functions have the same cause: TypeScript thinks `fail` can return.
+A function declaration that always throws is inferred as returning `void`. Annotate the
+return type yourself, with the type that means "this never returns".
+https://www.typescriptlang.org/docs/handbook/2/functions.html#never"""
+
+[exercises.error_notes]
+TS2322 = "`fail` always throws, but TypeScript doesn't know that: a function declaration is inferred as returning `void`. So `env.DATABASE_URL ?? fail(...)` looks like `string | void`, and `value` could still be `undefined` after `fail(...)`. Annotate the declaration: `function fail(message: string): never`. (Keep it a `function`: an arrow function stored in a `const` doesn't narrow the code after its calls, even with `: never` on the arrow.)"
+TS2366 = "TypeScript thinks the function can reach its end after `fail(...)`, because `fail`'s return type is inferred as `void`. Once `fail` is annotated `: never`, the call ends this code path, like a `throw`."
+TS2344 = "This type test checks that `fail`'s return type is `never`: the return type of a function that never returns normally."
+
+[[exercises]]
+name = "errors5"
+dir = "11_error_handling"
+hint = """
+A failure is a value now: `return { ok: false, error: "empty" };`, and a success is
+`{ ok: true, value: ... }`. In `amountFeedback`, check `result.ok` first: in the `true`
+branch `result.value` exists, in the other `result.error` does. A `switch` on
+`result.error` covers every code, and TypeScript knows when it's exhaustive.
+https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions"""
+
+[exercises.error_notes]
+TS2322 = "`parseAmount` promises a `Result`, so a bare number isn't a valid return value. Wrap it: `{ ok: true, value: cents }`. Do the same for the failures, which shouldn't be thrown anymore."
+TS2339 = "`result` may be a failure, which has no `value`. Check `result.ok` first: TypeScript narrows `result` to the success case inside that check."

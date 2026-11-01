@@ -1,0 +1,3 @@
+This file tells tslings that it runs in its own repository. `tslings dev check` then checks the
+official exercises in place, against `templates/tsconfig.json`, and makes sure `info.toml` matches
+the files in `curriculum/`.

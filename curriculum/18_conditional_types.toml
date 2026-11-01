@@ -1,0 +1,72 @@
+# CONDITIONAL TYPES
+
+[[exercises]]
+name = "conditional1"
+dir = "18_conditional_types"
+hint = """
+The shape is `P extends Something ? WhenItFits : Otherwise`. Here the test is
+"is `P` the type `undefined`?", the type when it fits is an empty tuple `[]`, and
+the other one is the tuple you already have.
+
+Making the payload optional (`[payload?: P]`) would compile, but then `emit` would
+also accept a login event without its `userId`. The type tests check for that.
+https://www.typescriptlang.org/docs/handbook/2/conditional-types.html"""
+
+[exercises.error_notes]
+TS2554 = "`emit` takes its extra arguments as `...args: EmitArgs<...>`, and `EmitArgs` is always a one-element tuple, so every event needs a payload. Events like `app/ready` have the payload type `undefined`: for them, `EmitArgs` should be an empty tuple."
+
+[[exercises]]
+name = "conditional2"
+dir = "18_conditional_types"
+hint = """
+Write the pattern the way you'd write the type itself: a function type whose return
+type is a `Promise` of a `JsonResponse`. `(...args: never[]) => ...` matches a function
+whatever its parameters are. Then put `infer Data` where the data type sits, and answer
+`Data` when the pattern matches.
+https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#inferring-within-conditional-types"""
+
+[exercises.error_notes]
+TS18046 = "`LoaderData` is still `unknown`, so TypeScript knows nothing about the user. Don't narrow it here: make `LoaderData` a conditional type that matches the loader's type and pulls out the data type with `infer`."
+TS2339 = "If the type here is `never`, your pattern didn't match `typeof userLoader`, so `LoaderData` took the false branch. Check the parameters first: `userLoader` needs a `userId: string`, so it doesn't fit `() => ...` or `(...args: unknown[]) => ...` (it can't accept any `unknown`). `(...args: never[]) => ...` fits every function."
+TS2345 = "If the parameter type is `never`, your pattern didn't match `typeof userLoader`, so `LoaderData` took the false branch. Check the parameters first: `userLoader` needs a `userId: string`, so it doesn't fit `() => ...` or `(...args: unknown[]) => ...`. `(...args: never[]) => ...` fits every function."
+
+[[exercises]]
+name = "conditional3"
+dir = "18_conditional_types"
+hint = """
+Both types check the bare `T`, so they distribute: write them as if `T` were a single
+notification. For `OnChannel`: does `T` fit `{ channel: C }`? Keep it, or answer
+`never`. For `DistributiveOmit`, the condition doesn't matter, only the distribution
+does: use one that always holds, and put the `Omit` in the true branch.
+https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#distributive-conditional-types"""
+
+[exercises.error_notes]
+TS2339 = "Both causes are in the types above. `OnChannel` still keeps every channel, so an `sms` here could be an email. And `Omit` on a union only keeps the keys that all members share (just `channel`), so `to`, `phone` and the rest are gone. Fix `OnChannel` and `DistributiveOmit`, not this code."
+TS2353 = "`NewNotification` lost the channel-specific keys (see the errors above), so `to` or `phone` look like typos. Fix `DistributiveOmit`, not the tests."
+
+[[exercises]]
+name = "conditional4"
+dir = "18_conditional_types"
+hint = """
+A conditional type only distributes when the type being checked is a bare type
+parameter, like the `P` in `P extends undefined`. Put `P` inside something, and do the
+same on the other side of `extends` so you still compare like with like.
+https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#distributive-conditional-types"""
+
+[exercises.error_notes]
+TS2345 = "`Toast` is the union `string | { title; body }`. `EmitArgs` distributed over it and produced two tuples, `[payload: string] | [payload: { title; body }]`. A variable of type `Toast` could hold either kind of toast, so TypeScript can't pick one of the two tuples. Make `EmitArgs` look at the payload type as a whole."
+
+[[exercises]]
+name = "conditional5"
+dir = "18_conditional_types"
+hint = """
+Write it as a chain of conditional types, one test per case of the list at the top,
+in that order: `T extends <a function type> ? ... : T extends object ? ... : ...`.
+In the object case, use a mapped type like `Readonly`'s, but call `DeepReadonly` on
+each property's type. A function type that matches any function was in mapped3.
+https://www.typescriptlang.org/docs/handbook/2/conditional-types.html"""
+
+[exercises.error_notes]
+TS2344 = "This type test compares `DeepReadonly<...>` with the type it should produce. Compare the two sides level by level: nested objects, arrays, the tuple and the function. `Readonly<T>` only changes the top level."
+TS7006 = "This parameter lost its type because `onError` isn't a function type anymore in `DeepReadonly<AppConfig>`: a mapped type turns a function type into `{}`. Don't annotate the parameter. Make `DeepReadonly` leave functions as they are."
+TS2349 = "`onError` isn't callable anymore: a mapped type applied to a function type keeps its properties (it has none) and drops the call signature. Make `DeepReadonly` leave functions alone, and test for them before testing for objects."

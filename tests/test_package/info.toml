@@ -1,0 +1,32 @@
+format_version = 1
+
+welcome_message = """
+Welcome to the tslings test exercises!"""
+
+final_message = """
+You finished the test exercises."""
+
+[[exercises]]
+name = "intro1"
+dir = "00_intro"
+test = false
+skip_check_unsolved = true
+hint = """
+Enter `n` to move on to the next exercise."""
+
+[[exercises]]
+name = "intro2"
+dir = "00_intro"
+test = false
+hint = """
+Fix the typo in `console.lgo`."""
+
+[[exercises]]
+name = "basics1"
+dir = "01_basics"
+extra_files = ["shapes.ts"]
+hint = """
+A square's area is its side times itself."""
+
+[exercises.error_notes]
+TS2322 = "`area` must return a number."

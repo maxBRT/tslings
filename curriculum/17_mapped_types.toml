@@ -1,0 +1,56 @@
+# MAPPED TYPES
+
+[[exercises]]
+name = "mapped1"
+dir = "17_mapped_types"
+hint = """
+The shape is `{ [K in keyof T]: ... }`. `K` takes each key of `T` in turn, and `T[K]`
+is the type of that property. Which type should each property have now, if it can
+also be `null`?
+
+`emptyForm` and `missingFields` are fine as they are: the fix is only in `Nullable`.
+https://www.typescriptlang.org/docs/handbook/2/mapped-types.html"""
+
+[exercises.error_notes]
+TS2322 = "`Nullable<T>` is still just `T`, so `Nullable<SignupForm>` is exactly `SignupForm` and `null` isn't allowed. Don't change `emptyForm`: turn `Nullable` into a mapped type that allows `null` in every property."
+
+[[exercises]]
+name = "mapped2"
+dir = "17_mapped_types"
+hint = """
+Deleting the word `readonly` from `Draft` isn't enough: a mapped type over `keyof T`
+copies the modifiers it finds on `T`, and every property of `Todo` is `readonly`.
+Look at how `Required` removes `?` in the comment at the top, and do the same with
+`readonly`.
+https://www.typescriptlang.org/docs/handbook/2/mapped-types.html#mapping-modifiers"""
+
+[exercises.error_notes]
+TS2540 = "Mutating the draft is the whole point of `produce`, so don't rewrite this line with a spread. The problem is the draft's type: `Draft<Todo>` still has `readonly` properties. Fix `Draft`."
+
+[[exercises]]
+name = "mapped3"
+dir = "17_mapped_types"
+hint = """
+Add an `as` clause after `keyof T`: `[K in keyof T as ...]`. In it, test the value's
+type, `T[K]`, against `AnyFunction`, and answer either `K` (keep the key) or `never`
+(drop it). `ActionsOf` is the same test with the two answers swapped.
+https://www.typescriptlang.org/docs/handbook/2/mapped-types.html#key-remapping-via-as"""
+
+[exercises.error_notes]
+TS2739 = "`StateOf<CartStore>` and `ActionsOf<CartStore>` still contain every key of the store, so these objects look incomplete. Don't add the missing keys here: filter them out of the two types with an `as` clause."
+
+[[exercises]]
+name = "mapped4"
+dir = "17_mapped_types"
+hint = """
+`Record<keyof T, ...>` gives every key the same value type. A mapped type over
+`keyof T` lets you use `T[K]`, the type of the field you're on, inside `FieldState`.
+
+Once that works, `couponCode` becomes a problem: a mapped type over `keyof T` copies
+the `?` from `CheckoutForm`. You saw how to remove a modifier in mapped2.
+https://www.typescriptlang.org/docs/handbook/2/mapped-types.html#mapping-modifiers"""
+
+[exercises.error_notes]
+TS18046 = "`FormState` gives every field the same `FieldState<unknown>`, so TypeScript has forgotten what each value holds: a string for `email`, a number for `quantity`. Change `FormState` so each field's state uses that field's own type."
+TS2345 = "The cause is `FormState`, not this call. If the message mentions `unknown` or `{}`, the field's value lost its type. If it ends with `| undefined`, the field's state itself became optional, because a mapped type over `keyof T` copies the `?` of `couponCode`."
+TS18048 = "`couponCode` is optional in `CheckoutForm`, and a mapped type over `keyof T` copies that `?`, so the field's state became optional too. The form needs a state for every field: remove the modifier in `FormState`."

@@ -1,0 +1,19 @@
+[[exercises]]
+name = "intro1"
+dir = "00_intro"
+test = false
+skip_check_unsolved = true
+hint = """
+Enter `n` to move on to the next exercise.
+You might need to press ENTER after typing `n`."""
+
+[[exercises]]
+name = "intro2"
+dir = "00_intro"
+test = false
+hint = """
+TypeScript reports that `user` has no property with that name, and it suggests
+one that exists. Compare the two spellings."""
+
+[exercises.error_notes]
+TS2551 = "TypeScript inferred the shape of `user` from the object literal, so it knows every property `user` has. Reading one that doesn't exist is almost always a typo. JavaScript would quietly give you `undefined` instead."

@@ -6,9 +6,10 @@
 //   3. run the file's `node:test` tests, or the file itself when `test = false`
 
 import { readFileSync } from "node:fs";
+import { styleText } from "node:util";
 import type { CheckOptions, Checker } from "./checker.ts";
 import { renderProblems } from "./render.ts";
-import { runFile } from "./runner.ts";
+import { runFile, type RunResult } from "./runner.ts";
 
 export interface ExerciseRunOptions extends CheckOptions {
   readonly test: boolean;
@@ -66,6 +67,22 @@ export async function runExerciseFile(
     color: options.color,
     ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
   });
-  output += (output.length > 0 ? "\n" : "") + run.output;
+  output += (output.length > 0 ? "\n" : "") + (options.test ? run.output : programOutput(run, options.color));
   return run.success ? { success: true, output } : { success: false, failedStep: "run", output };
+}
+
+/**
+ * The output of a `test = false` exercise, under an `Output` heading. A failure
+ * is spelled out: an exercise that calls `process.exit(1)` without printing
+ * anything would leave the learner wondering why it isn't done.
+ */
+function programOutput(run: RunResult, color: boolean): string {
+  const paint = (style: Parameters<typeof styleText>[0], text: string): string =>
+    color ? styleText(style, text, { validateStream: false }) : text;
+  let output = `${paint("underline", "Output")}\n${run.output}`;
+  if (!run.success && !run.timedOut) {
+    if (!output.endsWith("\n")) output += "\n";
+    output += `${paint(["bold", "red"], "The exercise didn't run successfully (nonzero exit code)")}\n`;
+  }
+  return output;
 }

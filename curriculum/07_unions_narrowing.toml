@@ -1,0 +1,82 @@
+# UNIONS AND NARROWING
+
+[[exercises]]
+name = "unions1"
+dir = "07_unions_narrowing"
+hint = """
+`typeof value` is `"string"` or `"number"` at runtime, and TypeScript understands
+the check: inside `if (typeof value === "string") { ... }`, `value` is a string.
+Return from that branch, and the rest of the function only has to deal with
+numbers. Don't forget that 0 has no unit.
+https://www.typescriptlang.org/docs/handbook/2/narrowing.html#typeof-type-guards"""
+
+[exercises.error_notes]
+TS2339 = "`value` is `number | string`, and `trim` only exists on strings. TypeScript won't let you call it until you prove that `value` is a string: check `typeof value === \"string\"` and call `trim` inside that branch."
+
+[[exercises]]
+name = "unions2"
+dir = "07_unions_narrowing"
+hint = """
+Put the checks before the regex, each one ending in `return` or `throw`:
+`header === undefined` first, then `Array.isArray(header)`. Hover `header` on
+each line to watch its type shrink.
+For the array: check that every value equals the first one, then call
+`contentLength` again with that first value, so a single string is validated
+in one place.
+https://www.typescriptlang.org/docs/handbook/2/narrowing.html#control-flow-analysis"""
+
+[exercises.error_notes]
+TS2345 = "`test` needs a string, but on this line `header` can still be `undefined` or an array. Add guard clauses above it: once a branch `return`s or `throw`s, TypeScript removes that case from `header`'s type for the lines below."
+
+[[exercises]]
+name = "unions3"
+dir = "07_unions_narrowing"
+hint = """
+Start with `if (schedule instanceof Date)`. In the rest of the function,
+`schedule` is one of the two plain objects: `"everyMinutes" in schedule` tells
+them apart. After both checks, TypeScript knows only the cron shape is left.
+https://www.typescriptlang.org/docs/handbook/2/narrowing.html#the-in-operator-narrowing
+https://www.typescriptlang.org/docs/handbook/2/narrowing.html#instanceof-narrowing"""
+
+[exercises.error_notes]
+TS2339 = "`everyMinutes` only exists on one member of `Schedule`. `typeof` returns \"object\" for all three members, so it can't help: use `schedule instanceof Date` for the date, and `\"everyMinutes\" in schedule` for the plain objects."
+
+[[exercises]]
+name = "unions4"
+dir = "07_unions_narrowing"
+hint = """
+Two separate fixes. One `case` compares `order` with a string that isn't a
+`SortOrder`: look at the union for the right spelling. And one member of the
+union has no `case` at all, so the function can end without returning.
+Resist adding a `default`: it would hide the next missing case too.
+https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#literal-types"""
+
+[exercises.error_notes]
+TS2366 = "TypeScript checked the `case`s against `SortOrder` and found a member that none of them handles, so for that value the function ends without returning. Add a `case` for every member of the union: then TypeScript knows the switch always returns."
+TS2678 = "`order` is a `SortOrder`, and this string isn't one of its members, so this `case` can never match. TypeScript catches the typo for you: use one of the strings listed in `SortOrder`."
+
+[[exercises]]
+name = "unions5"
+dir = "07_unions_narrowing"
+hint = """
+Write an `if (typeof value === "string") { ... }` that assigns a number to
+`value` (`replaceAll` removes every ","). After the `if`, both paths leave a
+number in `value`, so the last lines compile.
+https://www.typescriptlang.org/docs/handbook/2/narrowing.html#assignments"""
+
+[exercises.error_notes]
+TS2362 = "`*` only works on numbers, and here `value` is still `number | string`. Narrow it before this line: inside an `if (typeof value === \"string\")`, assign it the number the string holds. After that `if`, TypeScript knows `value` is a number on every path."
+prefer-const = "Keep the `let` this time: the exercise is to reassign `value` when it's a string. The warning goes away once your code does."
+
+[[exercises]]
+name = "unions6"
+dir = "07_unions_narrowing"
+hint = """
+Above the `if`, write `const user = currentUser;`, then check and use `user`
+everywhere instead of `currentUser`. The callback captures `user`, which can't
+be reassigned, so the check stays valid when the email is built, and logging
+someone else in later doesn't change who gets it.
+https://www.typescriptlang.org/docs/handbook/2/narrowing.html"""
+
+[exercises.error_notes]
+TS18048 = "You did check `currentUser` above, but this arrow function runs later, when the outbox is flushed. `currentUser` is a `let` that `logIn` and `logOut` can change before then, so TypeScript doesn't carry the check into the callback. Copy it into a `const` and check that instead: a const can't change, so the check still holds inside the callback."

@@ -1,0 +1,56 @@
+[[exercises]]
+name = "iterators1"
+dir = "21_iterators_generators"
+hint = """
+Add a method to the class whose name is computed: `[Symbol.iterator]`. Make it a generator
+with `*` in front of the name, so it can `yield` the nights one by one.
+Start at the check-in day and stop before the check-out day; `addDays` gives you the next night.
+https://www.typescriptlang.org/docs/handbook/iterators-and-generators.html"""
+
+[exercises.error_notes]
+TS2420 = "`implements Iterable<Date>` is a promise that the class has a `[Symbol.iterator]()` method returning an iterator of dates. Add that method: a generator method, `*[Symbol.iterator]() { ... }`, is the shortest way."
+TS2488 = "`for...of`, spread and destructuring only work on iterables: objects with a `[Symbol.iterator]()` method. `Stay` doesn't have one yet."
+TS2769 = "`Array.from` accepts an iterable or an array-like object (one with a `length`). `Stay` is neither yet; this error goes away once it's iterable."
+
+[[exercises]]
+name = "iterators2"
+dir = "21_iterators_generators"
+hint = """
+The annotation is `Generator<Yield, Return, Next>`: what the wizard yields (look at the
+`yield`s), what it returns (look at the `return`s), and what callers pass to `next()` (look
+at what `runWizard` sends).
+In `runWizard`, `step.done` tells the two cases apart, and TypeScript narrows `step.value`
+accordingly, like any discriminated union.
+https://www.typescriptlang.org/docs/handbook/iterators-and-generators.html"""
+
+[exercises.error_notes]
+TS7057 = "The value of a `yield` expression is whatever the caller passes to `next()`. TypeScript can't guess that, so it needs the generator's return type: `function* name(): Generator<Yield, Return, Next> { ... }`."
+TS2322 = "On `return step.value`: `step` is an iterator result, either `{ done: false, value: <a question> }` or `{ done: true, value: <the signup> }`. Check `step.done` before using `step.value` as a signup. If the error is inside `signupWizard`, check the `Next` type of its annotation: it is the type of every `yield` expression, so it must match what `runWizard` passes to `next()`."
+
+[[exercises]]
+name = "iterators3"
+dir = "21_iterators_generators"
+hint = """
+Spreading `lines` into an array would compile, but it reads the whole log before filtering.
+Instead, wrap `lines` with `Iterator.from(...)` to get the lazy helpers. Arrays have `slice`;
+iterators have `take(n)`, which stops after `n` values. Finish with `.toArray()`.
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Iterator"""
+
+[exercises.error_notes]
+TS2339 = "`Iterable<string>` only promises a `[Symbol.iterator]()` method, so it has none of the array or iterator helpers. `Iterator.from(lines)` gives you an iterator with lazy `map`, `filter`, `take`..."
+TS7006 = "A side effect of the error before it: `.map` doesn't exist here, so TypeScript can't type this callback. Don't annotate it; fix the `.map` call."
+
+[[exercises]]
+name = "iterators4"
+dir = "21_iterators_generators"
+hint = """
+`allCustomers` needs `async function*`, and a return type that matches: `AsyncGenerator<...>`,
+or no annotation at all and let TypeScript infer it.
+Then, instead of collecting every page into an array, yield each page's items as soon as the
+page arrives. `yield*` yields the items of an array one by one. Nothing is left to return.
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function*"""
+
+[exercises.error_notes]
+TS2504 = "`for await` loops over an async iterable: values that arrive one by one. `allCustomers` returns a single Promise of the whole array. TypeScript's `await` suggestion would compile, but every page would be fetched before the loop starts. Make `allCustomers` an async generator (`async function*`) that yields customers."
+TS2345 = "`Array.fromAsync` takes an async iterable (or a plain iterable), not a Promise of an array. This line works as soon as `allCustomers` is an async generator."
+TS18046 = "A side effect of the error just before: TypeScript can't tell what `Array.fromAsync` will produce, so `customer` is `unknown`. It's fixed by fixing `allCustomers`."

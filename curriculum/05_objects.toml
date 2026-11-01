@@ -1,0 +1,73 @@
+# OBJECTS
+
+[[exercises]]
+name = "objects1"
+dir = "05_objects"
+hint = """
+Inside the braces of an interface, list each property as `name: type;`.
+To build on another interface, write `interface DigitalProduct extends Product`
+and only list what's new. A type alias can do the same with `&`: write
+`Product`, an `&`, then an object type with the extra property.
+https://www.typescriptlang.org/docs/handbook/2/objects.html#extending-types
+https://www.typescriptlang.org/docs/handbook/2/objects.html#intersection-types"""
+
+[exercises.error_notes]
+TS2339 = "`Product`, `DigitalProduct` and `CartLine` are still empty object types, so TypeScript doesn't know about any of their properties yet. Describe them as the TODOs say."
+
+[[exercises]]
+name = "objects2"
+dir = "05_objects"
+hint = """
+The object may only contain `phone` when there is a phone number. Two common
+ways to write that:
+- build the required part first, then add each optional property in an `if`;
+- spread a conditional object: `...(condition ? {} : { key: value })`.
+https://www.typescriptlang.org/tsconfig/#exactOptionalPropertyTypes"""
+
+[exercises.error_notes]
+TS2375 = "With `exactOptionalPropertyTypes`, an optional property like `phone?: string` may be missing, but not set to `undefined`. TypeScript suggests adding `undefined` to the property types of `Contact`. Don't: a key set to `undefined` still counts as present for `in` and `Object.keys`. Leave the property out of the object when the field is empty."
+
+[[exercises]]
+name = "objects3"
+dir = "05_objects"
+hint = """
+`{ ...prefs, theme }` is a new object with every property of `prefs`, except
+`theme`, which takes the new value.
+For the channels, spread works on arrays too: `[...list, item]` is a new array
+with one more element.
+https://www.typescriptlang.org/docs/handbook/2/objects.html#readonly-properties"""
+
+[exercises.error_notes]
+TS2540 = "`theme` is `readonly`: the object can't be changed. Return a new object instead, made with spread syntax, with the new theme in it."
+TS2339 = "`mutedChannels` is a `readonly string[]`, which has no `push`. Build a new array that holds the old channels plus the new one."
+
+[[exercises]]
+name = "objects4"
+dir = "05_objects"
+hint = """
+For `POLICY`, read TypeScript's suggestion: it knows the property names of
+`RetryPolicy`.
+For the logger: `withRetries` calls two methods on its logger, and the
+memory logger only has one. Add the other one, recording lines in the same
+format ("warn: ..."). The extra `lines` property can stay: extra properties
+are fine for a value that isn't a fresh object literal.
+https://www.typescriptlang.org/docs/handbook/type-compatibility.html"""
+
+[exercises.error_notes]
+TS2561 = "Object literals may only list properties their type knows about. This catches typos, which matters most for optional properties: without this check, a misspelled option would be silently ignored."
+TS2344 = "A type test fails. Keep `RetryPolicy` as it is, and keep the `RetryPolicy` annotation on `POLICY`: the annotation is what triggers the check that found the typo. Fix the property name instead."
+TS2741 = "The memory logger doesn't have every method that `Logger` requires. Structural typing only needs the right members, so add the missing one to the object that `createMemoryLogger` returns."
+
+[[exercises]]
+name = "objects5"
+dir = "05_objects"
+hint = """
+`Record<Keys, Value>` takes the allowed keys as its first type argument. Use
+`Locale` there, and TypeScript will ask for one entry per locale.
+For the flags, the keys really are open-ended, so the `undefined` case is
+real: decide what a missing flag means and return that.
+https://www.typescriptlang.org/docs/handbook/utility-types.html#recordkeys-type"""
+
+[exercises.error_notes]
+TS2322 = "With `string` keys, any key may be missing, so a read gives `V | undefined`. `GREETINGS` only needs the `Locale` keys: give it a type that lists them, and reads become safe. Flags have open-ended keys: handle the missing case."
+TS2741 = "`Record<Locale, string>` requires one entry per locale, and this one is missing. Add it to the object; that check is the reason to use a `Record` here."

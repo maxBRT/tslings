@@ -1,0 +1,18 @@
+# QUIZ 1
+
+[[exercises]]
+name = "quiz1"
+dir = "quizzes"
+hint = """
+Start with the types: `readonly` before `sku`, `?` after `discontinued`, and a
+tuple with a label before each type for `DeliveryLine`.
+- `receive`: loop over the lines with `for...of`, destructuring each tuple;
+  `stock.get(sku)` may be `undefined` for a new SKU.
+- `lowStock`: `filter`, then `map` to the names. A missing `discontinued` means
+  the item is still sold.
+- `stockValue`: start from an object with every category at 0, typed
+  `Record<Category, number>`, and add each item's value to its category."""
+
+[exercises.error_notes]
+TS2355 = "This function still has no body. Its return type is the contract: write code that returns a value of that type on every path."
+TS2344 = "A type test fails: one of the types you wrote doesn't match exactly what the TODO describes. Compare it with the type on the other side of `Equal`, modifiers (`readonly`, `?`) included."

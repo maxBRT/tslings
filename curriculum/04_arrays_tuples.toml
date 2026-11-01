@@ -1,0 +1,75 @@
+# ARRAYS AND TUPLES
+
+[[exercises]]
+name = "arrays1"
+dir = "04_arrays_tuples"
+hint = """
+`scores` needs an array type: `number[]` reads "array of numbers". Put
+`readonly` in front of it, like the parameter of `topThree`.
+
+A `readonly` array has no `sort`, because `sort` reorders the array in place.
+Look for a method that returns a sorted copy instead, or sort a copy you made
+with spread syntax.
+https://www.typescriptlang.org/docs/handbook/2/objects.html#the-readonlyarray-type"""
+
+[exercises.error_notes]
+TS2339 = "`readonly number[]` has none of the methods that change an array, so `sort` (which sorts in place) is gone. ES2023 added copying versions of the mutating methods: look for one that returns a sorted copy."
+
+[[exercises]]
+name = "arrays2"
+dir = "04_arrays_tuples"
+hint = """
+Each function reads `xs[i]`, which TypeScript types as possibly `undefined`.
+- `totalMinutes`: a `for...of` loop hands you the elements directly.
+- `lastMessage`: `messages.at(-1)` is the last element or `undefined`.
+  Check for `undefined` (or use `??`) to return the fallback text.
+- `parseArgs`: destructure `argv` and give each element a default with `=`.
+https://www.typescriptlang.org/tsconfig/#noUncheckedIndexedAccess"""
+
+[exercises.error_notes]
+TS2532 = "With `noUncheckedIndexedAccess`, `sessions[i]` is `number | undefined`: TypeScript doesn't connect the index to the loop condition. Iterate over the elements themselves instead of over indexes."
+TS2322 = "The last element of an array is `string | undefined`, whether you read it with an index or with `.at(-1)`: the array may be empty. Handle the empty case before returning a `string`."
+TS18048 = "Reading `argv[0]` or `argv[1]` gives `string | undefined`: the user may not have passed that argument. Destructuring with a default (`const [a = \"x\"] = list`) gives you a plain `string`."
+
+[[exercises]]
+name = "arrays3"
+dir = "04_arrays_tuples"
+hint = """
+`Boolean` is a plain function returning `boolean`, so `filter` can't tell
+which type survives, and it drops the rating `0` because `0` is falsy.
+Write the callback yourself, as an arrow function that compares the value
+with `undefined`. TypeScript infers the type predicate for you.
+https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-5.html#inferred-type-predicates"""
+
+[exercises.error_notes]
+TS2322 = "`filter(Boolean)` keeps the array's element type, `number | undefined`. TypeScript only narrows the result when the callback checks its argument's type, e.g. an arrow function comparing it with `undefined`."
+
+[[exercises]]
+name = "arrays4"
+dir = "04_arrays_tuples"
+hint = """
+A tuple type lists one type per position: `[number, number]`. Labels go
+before each type (`[longitude: number, ...]`) and an optional last element
+gets a `?` after its label.
+
+Once `Position` is a tuple, `altitude` is `number | undefined`. Compare it
+with `undefined` (an altitude of 0 is valid) and build the longer string.
+https://www.typescriptlang.org/docs/handbook/2/objects.html#tuple-types"""
+
+[exercises.error_notes]
+TS18048 = "`Position` is `number[]`, so TypeScript can't promise the array has a first or a second element: each destructured value may be `undefined`. Make `Position` a tuple (see the TODO): the positions it declares are always there."
+TS2532 = "While `Position` is a `number[]`, reading `a[0]` or `b[1]` may give `undefined`: the array could be too short. Once `Position` is a tuple, its first two positions are always numbers and these errors go away."
+
+[[exercises]]
+name = "arrays5"
+dir = "04_arrays_tuples"
+hint = """
+`resizeWindow` takes exactly two numbers, so the spread value must be a
+tuple of two numbers.
+- `DEFAULT_SIZE`: add `as const` after the array literal.
+- `parseSize`: write the return type after the parameter list, as a tuple
+  with a label for each position.
+https://www.typescriptlang.org/docs/handbook/2/objects.html#readonly-tuple-types"""
+
+[exercises.error_notes]
+TS2556 = "The spread value is a `number[]`, which could hold any number of elements, but `resizeWindow` needs exactly two. Give the value a tuple type: `as const` for the constant, a return type annotation for `parseSize`."

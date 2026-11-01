@@ -1,0 +1,70 @@
+[[exercises]]
+name = "unknown1"
+dir = "10_unknown_type_guards"
+hint = """
+TypeScript only lets you compare or return `stored` as a number once you've proved it is one.
+`typeof stored === "number"` does that, for the rest of the condition or the `if` block.
+Some values pass that check and still aren't sizes (look at the last test). `Number` has a
+static method for that, but it returns a plain `boolean`, so it doesn't narrow on its own.
+https://www.typescriptlang.org/docs/handbook/2/narrowing.html#typeof-type-guards"""
+
+[exercises.error_notes]
+TS18046 = "`stored` came from `JSON.parse`, so it could be anything: `16`, `\"16\"`, `null`, `[16]`. Check `typeof stored` before using it. Deleting the `unknown` annotation would also silence this error, but `stored` would become `any` and the bug would get through to the tests."
+TS2322 = "The function promises to return a `number`, and `stored` is still `unknown` here. Once you've narrowed `stored` with `typeof`, this error goes away too."
+
+[[exercises]]
+name = "unknown2"
+dir = "10_unknown_type_guards"
+hint = """
+Start by handling everything that isn't an object, and return the fallback early: below
+that check, `body` has type `object`. Remember that `typeof null` is "object" too.
+`object` has no known properties: check that each one is there with the `in` operator
+before reading it, then check the property's own type with `typeof`.
+https://www.typescriptlang.org/docs/handbook/2/narrowing.html#the-in-operator-narrowing"""
+
+[exercises.error_notes]
+TS18046 = "`body` is `unknown`: it could be an object, a string, `null`... Narrow it to an object first: `typeof body === \"object\" && body !== null`."
+TS18047 = "`typeof null` is `\"object\"` (a famous JavaScript quirk), so `typeof body === \"object\"` alone still lets `null` through. Add `body !== null` to the check."
+TS2339 = "TypeScript knows `body` is an object, but not which properties it has. `\"message\" in body` narrows it to an object with a `message` property, whose type is `unknown`, so check its type too."
+
+[[exercises]]
+name = "guards1"
+dir = "10_unknown_type_guards"
+hint = """
+A type guard's return type is a type predicate: `value is SomeType`, where `value` is the name
+of the parameter. With it, `rows.filter(isUser)` returns `User[]` instead of `unknown[]`.
+Then look at the test rows: one of them has every field except a valid `active`.
+https://www.typescriptlang.org/docs/handbook/2/narrowing.html#using-type-predicates"""
+
+[exercises.error_notes]
+TS18046 = "`filter` only narrows the element type when its callback is a type predicate. `isUser` returns a plain `boolean`, so `rows.filter(isUser)` is still `unknown[]`. Fix the return type of `isUser`, not this line."
+TS2344 = "This type test checks the signature of `isUser`: it must return a type predicate about its `value` parameter, not a `boolean`."
+
+[[exercises]]
+name = "guards2"
+dir = "10_unknown_type_guards"
+hint = """
+`assertIsObject` shows the shape: the return type is `asserts value is <type>`, and the body
+throws when the check fails. Use the same return type style for `assertIsString` and
+`assertIsPort`. For the port, check `typeof` first, then `Number.isInteger` and the range.
+https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#assertion-functions"""
+
+[exercises.error_notes]
+TS2322 = "The `assertIs...` functions throw for bad values, but they're declared as returning `void`, so TypeScript learns nothing from the calls: `host` and `port` are still `unknown`. Give each function a return type that says what it proves, like `assertIsObject` does."
+TS2344 = "These type tests check the signatures of `assertIsString` and `assertIsPort`: each one must be an assertion function about its `value` parameter (`asserts value is ...`)."
+
+[[exercises]]
+name = "guards3"
+dir = "10_unknown_type_guards"
+hint = """
+Check `body` the way you did in unknown2: object first, then each field with `in` and
+`typeof`, returning `{ ok: false, error }` early. Each early return keeps the narrowing for the
+lines below it. A `string` isn't a `Currency` yet: a small type guard on `CURRENCIES` fixes it
+(`includes` won't accept a plain `string` there). An invalid date string gives a `Date` whose
+`getTime()` is `NaN`.
+https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/"""
+
+[exercises.error_notes]
+TS18046 = "The webhook body is `unknown`: don't trust it yet. Check that it's an object, then check each field with `in` and `typeof`, before building the `Payment`."
+TS2339 = "`body` is narrowed to `object`, which has no known properties. Check that the property is there with `\"id\" in body`, then check its type."
+TS2322 = "A `string` isn't a `Currency` until you've checked that it is one of `CURRENCIES`. `CURRENCIES.includes(code)` doesn't accept a plain `string`; a small type guard `(code: string): code is Currency` does the job."

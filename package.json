@@ -25,8 +25,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepare": "npm run build",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --test tests/",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.dev.json",
+    "test": "node --test \"tests/**/*.test.ts\"",
     "dev": "node src/main.ts",
     "verify": "node scripts/verify.ts"
   },

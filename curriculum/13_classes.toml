@@ -1,0 +1,89 @@
+[[exercises]]
+name = "classes1"
+dir = "13_classes"
+hint = """
+A field gets its value either where it's declared (`count = 0;`) or in the constructor
+(`this.count = count;`). Use the constructor for values that come from its parameters, and
+an initializer for values every instance starts with.
+`readonly` goes before the field name: `readonly maxRequests: number;`.
+https://www.typescriptlang.org/docs/handbook/2/classes.html#fields"""
+
+[exercises.error_notes]
+TS2564 = "This field may still be `undefined` when the constructor finishes. Assign it in the constructor if the value comes from a parameter, or give it an initial value where it's declared. (Writing `field!: type` would silence this error, and crash at runtime instead.)"
+TS2344 = "The type test checks that `maxRequests` and `windowMs` are `readonly`: they're set once, in the constructor, and never change."
+
+[[exercises]]
+name = "classes2"
+dir = "13_classes"
+hint = """
+Declare each field in the class body with its type, take plain parameters in the constructor
+(`constructor(baseUrl: string, token: string)`), and assign them with `this.x = x`.
+For the token, use a field whose name starts with `#`. It's read as `this.#token`.
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes/Private_elements"""
+
+[exercises.error_notes]
+TS1294 = "Parameter properties (`readonly` or `private` in front of a constructor parameter) make TypeScript generate the assignments, so Node can't run them by erasing types. Declare the fields in the class body, and assign them in the constructor."
+TS2344 = "The type test checks that `baseUrl` is still a public `readonly` field once you've moved it into the class body."
+
+[[exercises]]
+name = "classes3"
+dir = "13_classes"
+hint = """
+Read the lines under the first error: they name the member `FakeGateway` is missing.
+Give `charge` the same parameter types (and return type) as in the interface. `implements`
+won't do it for you. For `refund`, remember what `Map.prototype.delete` returns.
+https://www.typescriptlang.org/docs/handbook/2/classes.html#implements-clauses"""
+
+[exercises.error_notes]
+TS2420 = "The class says it implements `PaymentGateway` but doesn't match it yet. The lines under the message name the member that is missing or has the wrong type."
+TS7006 = "`implements` checks the class but doesn't give its methods' parameters their types, so this one would be `any`. Annotate it with the type the interface uses."
+TS2416 = "This method doesn't match the one declared in `PaymentGateway`. Compare the parameter and return types with the interface."
+TS2741 = "`FakeGateway` doesn't have every member of `PaymentGateway` yet (see the first error). Add the missing method to the class; the interface is fine as it is."
+TS2339 = "`FakeGateway` has no `refund` method yet. Add it to the class, with the signature the interface declares."
+
+[[exercises]]
+name = "classes4"
+dir = "13_classes"
+hint = """
+Two separate fixes. `CsvExporter.header` replaces a method that `Exporter` implements:
+`noImplicitOverride` wants that said explicitly. `JsonLinesExporter` overrides a method
+that doesn't exist, and doesn't implement one that's `abstract`: compare the names.
+https://www.typescriptlang.org/docs/handbook/2/classes.html#abstract-classes-and-members"""
+
+[exercises.error_notes]
+TS4114 = "This member replaces one that already has a body in `Exporter`. With `noImplicitOverride`, say so with the keyword: `protected override header(...)`. If this error is in the tests, `Exporter` itself was changed: its `abstract` members must stay abstract."
+TS2515 = "`Exporter` declares `formatRow` as `abstract`, so every concrete subclass must implement it. Is there a method with a similar name in this class?"
+TS4113 = "`Exporter` has no member with this name, so there's nothing to override. This is what `override` is for: it caught a misnamed method. Which method of `Exporter` was this one meant to replace?"
+TS4117 = "`Exporter` has no member with this name, so there's nothing to override. This is what `override` is for: it caught a misnamed method."
+
+[[exercises]]
+name = "classes5"
+dir = "13_classes"
+hint = """
+Turn the enum into an object with the same keys and values, followed by `as const`. Then
+declare a type with the same name, derived from the object: the comment at the top shows how.
+Nothing else in the file needs to change.
+https://www.typescriptlang.org/docs/handbook/enums.html#objects-vs-enums"""
+
+[exercises.error_notes]
+TS1294 = "`enum` generates a JavaScript object at compile time, so Node can't run it by erasing types. Replace it with a plain object marked `as const`, and a type of the same name derived from it."
+TS2345 = "This is the other reason teams avoid enums: a string enum only accepts its own members (`LogLevel.Debug`), not the string `\"debug\"`, even though that's its value. A union of string literals accepts both."
+TS2344 = "The type tests check that the type `LogLevel` is the union of the four strings, and that `LogLevel.Warn` has the literal type `\"warn\"` (which is what `as const` gives you)."
+
+[[exercises]]
+name = "classes6"
+dir = "13_classes"
+hint = """
+Declare the type parameter after the class name, with a constraint so `item.id` still
+type-checks: `class Repository<T extends ...>`. Then replace `Entity` with `T` in the methods.
+For chaining, the return type of `add` is the special type `this`.
+https://www.typescriptlang.org/docs/handbook/2/classes.html#this-types"""
+
+[exercises.error_notes]
+TS2315 = "`Repository` has no type parameter yet, so `Repository<Product>` doesn't mean anything. Declare one after the class name, like for a generic function. Most of the other errors in this file come from this one."
+TS2558 = "`Repository` has no type parameter yet, so it can't take a type argument. Declare one after the class name."
+TS2339 = "Several errors in this file come from the first one: fix `Repository` first. Then, if `T` has no `id`: TypeScript only knows what a constraint promises, so constrain `T` to entities. If `inStock` or `byEmail` is missing after `.add(...)`: `add` returns a plain `Repository`, which doesn't have the subclass's methods. The return type `this` keeps the exact type of the object."
+TS7006 = "This one comes from the first error: the subclass can't extend `Repository<...>` yet, so `this.all()` has no known type. Fix `Repository` first."
+TS2351 = "This one comes from the first error: the subclass can't extend `Repository<...>` yet. Fix `Repository` first."
+TS2353 = "This one comes from the first error: until `Repository` is generic, it only knows about `Entity`, which has no `email`. Fix `Repository` first."
+TS2344 = "The type tests check that the methods return `T`-based types (`Product | undefined`, `Product[]`), and that `add` on a `ProductRepository` returns a `ProductRepository`."

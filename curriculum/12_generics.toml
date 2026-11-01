@@ -1,0 +1,107 @@
+# GENERICS
+
+[[exercises]]
+name = "generics1"
+dir = "12_generics"
+hint = """
+Declare a type parameter right after the function name, `function unique<T>(...)`,
+then use `T` where the signature says `unknown`: once for the input array, once
+for the returned array. That's the link that makes the type come back out.
+
+The explicit `unique<string>([])` in the tests only compiles once `unique` has
+a type parameter to receive it.
+https://www.typescriptlang.org/docs/handbook/2/generics.html"""
+
+[exercises.error_notes]
+TS18046 = "The error shows up in the tests, but its cause is the signature of `unique`: it returns `unknown[]`, so callers get back values TypeScript knows nothing about. Give `unique` a type parameter so the element type that goes in comes back out."
+TS2558 = "The test passes a type argument (`unique<string>`), but `unique` doesn't declare a type parameter to receive it yet."
+TS2344 = "This type test checks what `unique` gives back: `string[]` for a list of strings, `number[]` for a list of numbers. A return type of `unknown[]` can't be both. Declare one type parameter and use it in the parameter and in the return type."
+
+[[exercises]]
+name = "generics2"
+dir = "12_generics"
+hint = """
+A constraint goes where the type parameter is declared: `<T extends SomeType>`.
+Here `SomeType` is the smallest shape the body needs: an object with an `id`
+of type `string`.
+
+Replacing `T` with `{ id: string }` everywhere would compile too, but the type
+tests check that callers still get their own type back.
+https://www.typescriptlang.org/docs/handbook/2/generics.html#generic-constraints"""
+
+[exercises.error_notes]
+TS2339 = "`T` has no constraint, so it could be any type, including types without an `id`. TypeScript only allows what works for every possible `T`. Tell it what `T` must have where `T` is declared: `<T extends ...>`."
+
+[[exercises]]
+name = "generics3"
+dir = "12_generics"
+hint = """
+Only one word of the signature needs to change: the type of `key`. Which type
+means "one of the property names of `T`"? The comment at the top names it.
+
+With that type, `a[key]` is the type of "some property of `T`", and comparing
+two of them with `<` and `>` is allowed.
+https://www.typescriptlang.org/docs/handbook/2/keyof-types.html"""
+
+[exercises.error_notes]
+TS7053 = "`a` is a `T`, which could be anything (that's why the message says `unknown`), and `key` could be any string. Nothing proves that `a[key]` exists. Change the type of `key` so it can only be one of `T`'s property names."
+
+[[exercises]]
+name = "generics4"
+dir = "12_generics"
+hint = """
+A generic interface declares its type parameter after its name:
+`interface ApiResponse<T> { ... }`. Use `T` where the two old interfaces had
+`User` and `Order[]`, then delete them.
+
+A default looks like an assignment inside the angle brackets: `<T, E = SomeType>`.
+https://www.typescriptlang.org/docs/handbook/2/generics.html#generic-types
+https://www.typescriptlang.org/docs/handbook/2/generics.html#generic-parameter-defaults"""
+
+[exercises.error_notes]
+TS2552 = "Not a typo, and not the built-in `Response`: `ApiResponse` doesn't exist yet. Write it as one generic interface that replaces `UserResponse` and `OrderListResponse`. What differs between the two becomes the type parameter."
+TS2314 = "`Result` declares two type parameters and neither has a default, so every use must pass both. Give `E` a default value where `Result` is declared."
+
+[[exercises]]
+name = "generics5"
+dir = "12_generics"
+hint = """
+The fix is one word, placed right before `T` in the type parameter list. The
+comment at the top names it.
+
+Callers keep writing plain arrays: no `as const` at the call site.
+https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-0.html#const-type-parameters"""
+
+[exercises.error_notes]
+TS2344 = "`names` was inferred as `string[]`, not as the exact tuple of names. Inference is decided where `T` is declared: one modifier there makes TypeScript infer literal types, as if the caller had written `as const`."
+
+[[exercises]]
+name = "generics6"
+dir = "12_generics"
+hint = """
+Declare `<A, B, C>` after `pipe`, then replace each `unknown` with the right
+one: `first` goes from A to B, `second` from B to C, and the returned function
+from A to C.
+
+You don't have to change the body: `(input) => second(first(input))` is
+already correct once the types line up.
+https://www.typescriptlang.org/docs/handbook/2/functions.html#generic-functions"""
+
+[exercises.error_notes]
+TS2345 = "`pipe` says `first` must accept `unknown`, any value at all, but the function passed here only accepts one kind of value (a `string`, a `Post`). Rather than accept anything, `pipe` should take its input type from `first`: that's a job for a type parameter."
+TS18046 = "`pipe` hands `unknown` to `second`, so TypeScript knows nothing about its parameter. With type parameters, `second`'s input type comes from what `first` returns."
+
+[[exercises]]
+name = "generics7"
+dir = "12_generics"
+hint = """
+For each type parameter, count where it appears in the signature (between the
+parentheses and in the return type). Once: replace it with its constraint and
+drop the angle brackets. Twice or more: it's doing a job, keep it.
+
+`firstTag` returns the same `T` it receives: that's the one to keep.
+https://www.typescriptlang.org/docs/handbook/2/functions.html#guidelines-for-writing-good-generic-functions"""
+
+[exercises.error_notes]
+TS2322 = "The caller chooses `T`. Someone could call `emptyOrder<Order & { giftWrap: true }>()`, and this object has no `giftWrap`, so TypeScript can't accept it as a `T`. A type parameter that only appears in the return type can't be honoured: return a plain `Order` instead."
+TS2344 = "The type tests compare each function with the signature it should have. `<T extends Order>(order: T) => string` accepts the same arguments as `(order: Order) => string`, but it's a different, more complicated type. And `firstTag` must keep returning the exact tags it receives."

@@ -1,0 +1,61 @@
+# TEMPLATE LITERAL TYPES
+
+[[exercises]]
+name = "template_literals1"
+dir = "19_template_literal_types"
+hint = """
+A placeholder `${...}` in a template literal type can hold any union of string literals,
+like the `Unit` and `Side` types above, or a union written inline. Each placeholder
+multiplies the combinations. Widening `CssLength` to `string` would compile, but then
+"12" and "12em" would be accepted, and the type tests check that they aren't.
+https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html"""
+
+[exercises.error_notes]
+TS2322 = "`CssLength` only accepts lengths ending in \"px\" for now, so a \"rem\" or \"%\" length doesn't fit. Keep this function as it is and widen `CssLength` to every `Unit`."
+TS2345 = "`SpacingProperty` only lists the `margin-*` properties for now. Add the `padding-*` ones in the type, without listing all eight names by hand."
+
+[[exercises]]
+name = "template_literals2"
+dir = "19_template_literal_types"
+hint = """
+Add an `as` clause to each mapped type: `[K in keyof T as NewName]`. The new name is a
+template literal type that puts "get" or "on" in front of the key, with the key's
+first letter upper-cased by one of the four built-in string types.
+https://www.typescriptlang.org/docs/handbook/2/mapped-types.html#key-remapping-via-as
+https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html#intrinsic-string-manipulation-types"""
+
+[exercises.error_notes]
+TS2561 = "The name written here is the right one, so don't follow TypeScript's suggestion. The problem is in the types: `Getters` and `EventProps` still use the original keys (`volume`, `play`...). Rename the keys inside those two types with an `as` clause."
+TS2551 = "The name used here is the right one, so don't follow TypeScript's suggestion. `Getters` and `EventProps` still use the original keys (`volume`, `seek`...). Rename the keys inside those two types with an `as` clause."
+TS2339 = "The name used here is the right one. `Getters` and `EventProps` still use the original keys (`volume`, `seek`...). Rename the keys inside those two types with an `as` clause."
+TS2344 = "If this points at `Capitalize<K>`: `keyof T` may include number and symbol keys, and `Capitalize` only takes strings. Use `K & string`. If it points at a type test, the type you wrote doesn't produce the expected keys yet."
+TS7031 = "`from` and `to` have no type because `EventProps<PlayerEvents>` has no `onSeek` key yet, so this callback has no expected type to take them from. Don't annotate them: rename the keys in `EventProps`."
+
+[[exercises]]
+name = "template_literals3"
+dir = "19_template_literal_types"
+hint = """
+Add a first branch whose pattern has a "/" right after the name, and capture what
+comes after that "/" with a second `infer`. That rest of the path may hold more params:
+let `ParamName` find them, and join them to `Name` with `|`. Keep the existing pattern
+as the next branch, for a param at the very end of the path.
+https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html"""
+
+[exercises.error_notes]
+TS2353 = "`ParamName` doesn't find this path's param names yet, so the params object has the wrong keys. The starting version takes everything after the first \":\" as one name, slashes included: for \"/users/:userId/posts/:postId\" it gives \"userId/posts/:postId\". A name ends at the next \"/\", and the rest of the path may hold more params."
+
+[[exercises]]
+name = "template_literals4"
+dir = "19_template_literal_types"
+hint = """
+Work in two steps. First, a mapped type over the keys of `T` whose value, for each key
+`K`, is that key's paths. Then index that mapped type with its own keys, like
+`T[keyof T]` in chapter 15, to collect every value into one union. For each key, test
+`T[K]`: a string ends the path, anything else needs a template literal type that calls
+`MessageKey` on `T[K]`. A template can't hold symbol keys: loop over `keyof T & string`.
+https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html
+https://www.typescriptlang.org/docs/handbook/2/indexed-access-types.html"""
+
+[exercises.error_notes]
+TS2345 = "`MessageKey` only lists the top-level keys (`logout`, `checkout`, `profile`), not the paths to nested messages. Change `MessageKey` so it goes down into nested objects and joins the keys with dots."
+TS2322 = "A placeholder `${...}` in a template literal type only takes string-like types (string, number, bigint, boolean, null, undefined). If `K` doesn't fit, `keyof T` may hold symbol keys: loop over `keyof T & string`. If `MessageKey<...>` doesn't fit, it gives an object type instead of a union of strings: index the mapped type with its own keys."

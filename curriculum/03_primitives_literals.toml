@@ -1,0 +1,67 @@
+[[exercises]]
+name = "primitives1"
+dir = "03_primitives_literals"
+hint = """
+TypeScript tells you how to test for `NaN`: read the whole error message.
+For `formatPrice`, look for a method of numbers that formats them with a fixed number
+of decimals. A template string won't add the trailing zero.
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/toFixed"""
+
+[exercises.error_notes]
+TS2845 = "`NaN` is the only value that isn't equal to itself, so `x === NaN` is false even when `x` is `NaN`. TypeScript knows this comparison can never succeed. Use `Number.isNaN(x)`."
+TS2322 = "`cents / 100` is a `number`, and `formatPrice` promises a `string`. Numbers have a method that rounds them to a number of decimals and returns the result as a string."
+
+[[exercises]]
+name = "primitives2"
+dir = "03_primitives_literals"
+hint = """
+A `bigint` literal ends with `n`: `1_000_000n`. To go from one type to the other,
+call `Number(...)` or `BigInt(...)`.
+In `elapsedMs`, the timestamps are huge but their difference is small: convert at the
+point where no precision is lost, and remember that bigint division drops decimals.
+https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt"""
+
+[exercises.error_notes]
+TS2365 = "One side of this operator is a `bigint` and the other a `number`. JavaScript throws a TypeError when you mix them, and TypeScript reports it before that. Convert one side with `Number(...)` or `BigInt(...)`, or write a bigint literal like `1_000_000n`."
+TS2322 = "The function promises one numeric type and this expression has the other. `number` and `bigint` don't convert implicitly: use `Number(...)` or `BigInt(...)`."
+
+[[exercises]]
+name = "primitives3"
+dir = "03_primitives_literals"
+hint = """
+A return type that may be `null` is a union: `string | null`.
+Then, in `ratingLabel`, compare the average with `null` and return early. After that
+check, TypeScript knows the average is a plain `number`.
+https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#null-and-undefined"""
+
+[exercises.error_notes]
+TS2322 = "`averageRating` promises a `number`, and with `strict` on, `null` isn't a number. If `null` is a legitimate answer, the return type must include it."
+TS18047 = "`averageRating` can return `null`, and `null` has no `toFixed`. In JavaScript this line would crash with \"Cannot read properties of null\". Check for `null` first, and return the label for products without reviews."
+TS2344 = "A type test failed: the return type of `averageRating` must say that it can return `null`."
+
+[[exercises]]
+name = "literals1"
+dir = "03_primitives_literals"
+hint = """
+A union of literal types is written with `|` between the values: `"a" | "b"`.
+Once `LogLevel` is a union, TypeScript knows which strings `level` can be at every
+line of `severity`, and it rejects a comparison that can never be true.
+https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#literal-types"""
+
+[exercises.error_notes]
+TS2344 = "A type test failed: `LogLevel` is still `string`, so it accepts any text, typos included. Replace it with a union of the four level names."
+TS2367 = "TypeScript has already ruled out \"debug\" and \"info\" on this line, so `level` can only be \"warn\" or \"error\", never the string it's compared with. That's a typo `string` was hiding."
+
+[[exercises]]
+name = "literals2"
+dir = "03_primitives_literals"
+hint = """
+Add `as const` right after the array literal. `Plan` is already derived from `PLANS`.
+`as const` also makes the array `readonly`, which rules out methods that change it in
+place. Arrays have a method that returns a sorted copy instead.
+https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-4.html#const-assertions"""
+
+[exercises.error_notes]
+TS2344 = "A type test failed: `PLANS` is inferred as `string[]`, so `Plan` is just `string`. Tell TypeScript the array never changes, so it keeps the literal types."
+TS2339 = "`PLANS` is `readonly` now, so methods that modify it in place, like `sort`, don't exist on it. That's a bug TypeScript just caught: sorting `PLANS` would also reorder the signup form. Use the method that returns a sorted copy."
+TS7006 = "This error comes from the one just before it: `sort` doesn't exist on `PLANS`, so TypeScript has no function type to take the types of `a` and `b` from. Don't annotate them: fix the `sort` call and this error goes away."

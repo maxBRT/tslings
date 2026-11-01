@@ -1,0 +1,60 @@
+[[exercises]]
+name = "variables1"
+dir = "01_variables"
+hint = """
+`total` changes on every turn of the loop, so it can't be a `const`.
+`shippingCents` never changes: the warning suggests the keyword it should use.
+https://www.typescriptlang.org/docs/handbook/variable-declarations.html"""
+
+[exercises.error_notes]
+TS2588 = "A `const` keeps the value it was declared with. This variable is updated on every turn of the loop, so declare it with `let` instead."
+
+[[exercises]]
+name = "variables2"
+dir = "01_variables"
+hint = """
+Look at the value `longest` starts with. TypeScript infers the variable's type from
+it, and that type can't change afterwards. Start it with a value of the type you
+want it to hold, one that also makes sense when there are no tags at all.
+https://www.typescriptlang.org/docs/handbook/type-inference.html"""
+
+[exercises.error_notes]
+TS2365 = "`longest` was initialized with a string, so TypeScript inferred the type `string` for it, and `tag.length` is a number. Comparing a number with a string is almost always a bug. Look at the line that declares `longest`."
+TS2322 = "`longest` holds whatever type its initial value had, and that type is fixed. Fix the initial value and this error goes away too."
+
+[[exercises]]
+name = "variables3"
+dir = "01_variables"
+hint = """
+Follow the `if` and `else if` with a standard order in mind: not express, and a
+subtotal under 5000 cents. Which branch assigns `fee` for it?
+The `if` needs one more branch for every order the first two don't cover."""
+
+[exercises.error_notes]
+TS2454 = "TypeScript followed every path through the `if` above and found one where nothing assigns `fee`. On that path, JavaScript would return `undefined`. Add the missing branch."
+
+[[exercises]]
+name = "variables4"
+dir = "01_variables"
+hint = """
+`let method = "GET"` gets the type `string`, because a `let` could be set to any
+string later. Does `method` ever change? Then declare it so TypeScript keeps its
+literal type. The same goes for `path`, as the warning says.
+https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#literal-types"""
+
+[exercises.error_notes]
+TS2345 = "`method` is declared with `let`, so TypeScript widened its type from `\"GET\"` to `string`: a later line could set it to any string. `request` only accepts three specific strings. Does `method` need to change?"
+TS2344 = "A type test failed: `method` must have the literal type `\"GET\"`, the type TypeScript infers for a variable that can never change. Calling `request(\"GET\", ...)` directly would compile, but it doesn't answer the question this exercise asks."
+
+[[exercises]]
+name = "variables5"
+dir = "01_variables"
+hint = """
+A type annotation goes after the variable name: `let name: Type = value;`.
+Once `state` has the `ConnectionState` type, TypeScript checks every string you assign
+to it. If a new error appears, read it closely: it's a bug the tests would also catch."""
+
+[exercises.error_notes]
+TS2345 = "`let state = \"connecting\"` gives `state` the type `string`, since a `let` can change. `statusText` only accepts a `ConnectionState`. Annotate `state` with that type where it's declared."
+TS2322 = "Now that `state` is a `ConnectionState`, TypeScript checks every string assigned to it, and this one isn't one of the three. Look at its spelling."
+TS2344 = "A type test failed: `statusText` must keep accepting only a `ConnectionState`. Leave it as it was, and give the variable you pass to it a precise type instead."

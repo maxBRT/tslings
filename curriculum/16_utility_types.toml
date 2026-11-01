@@ -1,0 +1,84 @@
+# UTILITY TYPES
+
+[[exercises]]
+name = "utility1"
+dir = "16_utility_types"
+hint = """
+Each TODO is one utility type wrapped around a type that's already there.
+- A patch where every field may be left out: which utility makes all
+  properties optional?
+- Resolved options where none is missing: which one removes every `?`?
+- The defaults need two at once, one inside the other.
+https://www.typescriptlang.org/docs/handbook/utility-types.html"""
+
+[exercises.error_notes]
+TS2739 = "`applyPatch` asks for a complete `User`, but a patch only carries the fields that change. Derive the patch type from `User` with a utility type that makes every property optional."
+TS18048 = "`resolveOptions` returns `RequestOptions`, where every option is optional, so TypeScript can't promise any of them is there. After merging with the defaults, every one is: say so with a utility type in the return type (and in the type of the defaults)."
+TS2322 = "The merged object can only be complete if the defaults are complete too. Change the type of `DEFAULT_OPTIONS` as well."
+
+[[exercises]]
+name = "utility2"
+dir = "16_utility_types"
+hint = """
+- `NewProduct`: `Omit<Product, ...>` with the keys the server sets, as a union
+  of string literals: `"a" | "b"`.
+- `ProductPatch`: build it on `NewProduct`, so patches can't touch `id` either.
+- `ProductCard`: `Pick<Product, ...>` with the keys the card shows.
+Write them as type aliases (`type NewProduct = ...`): an interface can't be
+set equal to another type.
+https://www.typescriptlang.org/docs/handbook/utility-types.html#picktype-keys"""
+
+[exercises.error_notes]
+TS2739 = "The hand-written `NewProduct` has fallen behind `Product`: it lacks the fields listed here. Derive it from `Product` instead, so it can't fall behind again."
+TS2741 = "The hand-written `NewProduct` has fallen behind `Product`: it lacks this field. Derive it from `Product` instead, so it can't fall behind again."
+TS2353 = "This type was copied by hand from `Product` and no longer matches it: a field is missing, or has another name. Derive it from `Product` with `Pick`, `Omit` or `Partial`, and the two can't disagree."
+
+[[exercises]]
+name = "utility3"
+dir = "16_utility_types"
+extra_files = ["payments_sdk.ts"]
+hint = """
+`Parameters<typeof createCharge>` is a tuple of the parameter types: index it
+like an array to get one of them.
+
+For the charge, start from `ReturnType<typeof createCharge>`. It's a promise,
+because `createCharge` is async: one more utility type unwraps it.
+https://www.typescriptlang.org/docs/handbook/utility-types.html#returntypetype"""
+
+[exercises.error_notes]
+TS2345 = "`options` is `unknown`, and `createCharge` needs its own options type, which the SDK doesn't export. Derive `ChargeOptions` from the function: `Parameters<typeof createCharge>` lists its parameter types."
+TS18046 = "`Charge` is still `unknown`. Derive it from what `createCharge` returns, once the promise is unwrapped."
+TS2322 = "`Charge` is a promise type here: the `ReturnType` of an async function is `Promise<...>`. Unwrap it with `Awaited<...>`, the type-level `await`."
+TS2339 = "`Charge` doesn't have this property yet. If the error mentions `Promise<...>`, you have the promise, not what it resolves to: wrap it in `Awaited<...>`."
+
+[[exercises]]
+name = "utility4"
+dir = "16_utility_types"
+hint = """
+- `KeyEvent`: `Extract<AppEvent, { type: ... }>` keeps the members whose `type`
+  fits. The `type` you write there can itself be a union.
+- `TrackedType`: start from `AppEvent["type"]` and `Exclude` the one you don't track.
+- `UserId`: `NonNullable` around the type that's there now.
+https://www.typescriptlang.org/docs/handbook/utility-types.html#extracttype-union"""
+
+[exercises.error_notes]
+TS2339 = "`KeyEvent` is still the whole `AppEvent` union, and most events have no `key`. Keep only the keyboard members with `Extract`."
+TS2741 = "`TrackedType` still includes \"error\", so this `Record` needs an `error` key. Remove \"error\" from the union with `Exclude` instead of adding a counter nobody wants."
+TS18047 = "`UserId` still includes `null`. Remove it from the type with `NonNullable`, so callers must have a real id before they call this function."
+
+[[exercises]]
+name = "utility5"
+dir = "16_utility_types"
+hint = """
+Move the type from the annotation to the end of the object:
+`const FLAGS = { ... } satisfies SomeType;`
+
+Removing the annotation without replacing it doesn't work: the `user`
+parameters inside the table would lose their type.
+https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html#the-satisfies-operator"""
+
+[exercises.error_notes]
+TS18048 = "`FLAGS` is annotated as `Record<string, Flag>`: any string is a valid key, so any lookup may miss. TypeScript has forgotten the three flags you wrote. Check the table with `satisfies` instead of an annotation, and it remembers them."
+TS2345 = "With the `Record<string, Flag>` annotation, `FLAGS.newCheckout` might be `undefined` as far as TypeScript knows: it has forgotten the flags you wrote. With no type at all, the entries no longer fit `Flag` (`owner` widened to `string`). The fix is the same either way: check the table with `satisfies` instead of an annotation."
+TS2344 = "If `FlagName` is still `string`, the annotation is still there. If it's the `owner` test: an annotation, even `Record<\"darkMode\" | ..., Flag>`, replaces the table's own type, so `owner` becomes the whole `Team` union instead of \"payments\". `satisfies` checks the table and keeps its precise type."
+TS7006 = "Without a type on the table, nothing tells TypeScript what `user` is. Keep checking the table against `Record<string, Flag>`, but with `satisfies` instead of an annotation: it types the callbacks the same way."
