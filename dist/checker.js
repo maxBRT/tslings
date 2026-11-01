@@ -3,8 +3,8 @@
 // One `Checker` keeps a TypeScript project open for the whole session. After
 // the first check, re-checking a changed file only takes a few milliseconds,
 // which is what keeps the watch mode responsive.
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { readFileSync, realpathSync } from "node:fs";
+import { resolve, sep } from "node:path";
 import { NodeFlags, SyntaxKind } from "typescript/unstable/ast";
 import { isArrayLiteralExpression, isAsExpression, isBinaryExpression, isIdentifier, isObjectLiteralExpression, isParenthesizedExpression, isPostfixUnaryExpression, isPrefixUnaryExpression, isPropertyAssignment, isPropertyDeclaration, isShorthandPropertyAssignment, isSpreadAssignment, isSpreadElement, isTypeAssertion, isTypeReferenceNode, isVariableDeclaration, isVariableDeclarationList, } from "typescript/unstable/ast/is";
 import { API, DiagnosticCategory } from "typescript/unstable/sync";
@@ -59,14 +59,32 @@ const DEFINITE_ASSIGNMENT = {
     message: "definite assignment assertions (`name!: Type`) are not allowed in tslings exercises",
     note: "`!` after a name tells TypeScript the variable or field is always assigned before it's read, without checking. Give it a value where it's declared or in the constructor, or add `| undefined` to its type and check it before use.",
 };
+/**
+ * A file path the way the TypeScript API names files: absolute, with `/` separators.
+ * On Windows, short 8.3 names (`C:\Users\RUNNER~1`) are expanded too, so that the
+ * path matches the one TypeScript found when it listed the project's files.
+ */
+export function typeScriptPath(file) {
+    const absolute = resolve(file);
+    if (sep === "/")
+        return absolute;
+    let long = absolute;
+    try {
+        long = realpathSync.native(absolute);
+    }
+    catch {
+        // The file doesn't exist yet: keep the path as given.
+    }
+    return long.replaceAll("\\", "/");
+}
 export class Checker {
     #api;
     #configPath;
     #project;
     /** @param configPath The tsconfig.json that includes every exercise and solution file. */
     constructor(configPath) {
-        this.#configPath = resolve(configPath);
-        this.#api = new API({ cwd: resolve(configPath, "..") });
+        this.#configPath = typeScriptPath(configPath);
+        this.#api = new API({ cwd: typeScriptPath(resolve(configPath, "..")) });
         this.#project = this.#openProject({ openProjects: [this.#configPath] });
     }
     #openProject(params) {
@@ -79,13 +97,13 @@ export class Checker {
     /** Tell the checker that files changed on disk. Pass nothing to drop every cached file. */
     invalidate(files) {
         this.#project = this.#openProject({
-            fileChanges: files === undefined ? { invalidateAll: true } : { changed: files.map((file) => resolve(file)) },
+            fileChanges: files === undefined ? { invalidateAll: true } : { changed: files.map(typeScriptPath) },
         });
     }
     /** Type-check and lint one file. The file and its extra files are re-read from disk. */
     check(file, options = {}) {
-        const path = resolve(file);
-        this.invalidate([path, ...(options.extraFiles ?? []).map((extra) => resolve(extra))]);
+        const path = typeScriptPath(file);
+        this.invalidate([path, ...(options.extraFiles ?? [])]);
         if (this.#project.program.getSourceFile(path) === undefined) {
             // A file created after the project was opened (e.g. a new solution file).
             this.#project = this.#openProject({ fileChanges: { created: [path] } });

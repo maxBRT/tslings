@@ -12,7 +12,15 @@ export const MAIN = join(ROOT, "src", "main.ts");
 
 const temporaryDirs: string[] = [];
 after(() => {
-  for (const dir of temporaryDirs) rmSync(dir, { recursive: true, force: true });
+  for (const dir of temporaryDirs) {
+    try {
+      // On Windows, a TypeScript server that is still shutting down may hold files open for a moment.
+      rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+    } catch (error) {
+      // A leftover temporary directory must not fail the tests.
+      console.warn(`Could not remove ${dir}: ${String(error)}`);
+    }
+  }
 });
 
 export function temporaryDir(prefix = "tslings-test-"): string {

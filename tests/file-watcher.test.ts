@@ -26,8 +26,14 @@ function info(name: string, dir: string | undefined, extraFiles: string[] = []):
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** A watcher on a temporary `exercises/` directory, and the exercises it reported as changed. */
-function setUp(): { root: string; changes: number[]; pause: InputPause; close: () => void } {
+/**
+ * A watcher on a temporary `exercises/` directory, and the exercises it reported as changed.
+ *
+ * On macOS, Node watches directories with FSEvents, which needs a moment to start and may
+ * still report the files created just before the watcher. A learner saves seconds after
+ * tslings starts, so the tests wait for the watcher to settle and drop those early events.
+ */
+async function setUp(): Promise<{ root: string; changes: number[]; pause: InputPause; close: () => void }> {
   const root = temporaryDir();
   mkdirSync(join(root, "exercises", "01_basics"), { recursive: true });
   for (const file of ["01_basics/basics1.ts", "01_basics/basics2.ts", "01_basics/shapes.ts", "top.ts"]) {
@@ -42,7 +48,10 @@ function setUp(): { root: string; changes: number[]; pause: InputPause; close: (
   const send = (event: WatchEvent): void => {
     if (event.kind === "file-change") changes.push(event.exerciseInd);
   };
+  await sleep(300);
   const watcher = watchExercises(exercises, pause, send, root);
+  await sleep(700);
+  changes.length = 0;
   return { root, changes, pause, close: () => watcher.close() };
 }
 
@@ -55,7 +64,7 @@ async function takeChanges(changes: number[]): Promise<number[]> {
 }
 
 test("the file watcher sees every way of saving a file", { timeout: 30_000 }, async () => {
-  const { root, changes, close } = setUp();
+  const { root, changes, close } = await setUp();
   const file = (path: string): string => join(root, "exercises", path);
   try {
     writeFileSync(file("01_basics/basics1.ts"), "// in place\n");
@@ -85,7 +94,7 @@ test("the file watcher sees every way of saving a file", { timeout: 30_000 }, as
 });
 
 test("the file watcher keeps working when a chapter directory is created again", { timeout: 30_000 }, async () => {
-  const { root, changes, close } = setUp();
+  const { root, changes, close } = await setUp();
   try {
     rmSync(join(root, "exercises", "01_basics"), { recursive: true });
     await sleep(100);
@@ -99,7 +108,7 @@ test("the file watcher keeps working when a chapter directory is created again",
 });
 
 test("the file watcher ignores changes while an exercise runs, and deleted files", { timeout: 30_000 }, async () => {
-  const { root, changes, pause, close } = setUp();
+  const { root, changes, pause, close } = await setUp();
   try {
     await pause.during(async () => {
       writeFileSync(join(root, "exercises", "top.ts"), "// while running\n");
