@@ -9,9 +9,6 @@ jobs:
   check:
     name: Node ${{ matrix.node }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    # Windows isn't tested by hand yet, and some tests assume POSIX paths.
-    # Its job runs so problems show up, without failing the whole check.
-    continue-on-error: ${{ matrix.os == 'windows-latest' }}
     strategy:
       fail-fast: false
       matrix:

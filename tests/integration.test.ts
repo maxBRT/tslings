@@ -113,7 +113,9 @@ describe("community exercises", () => {
     const result = cli(["reset", "test_failure"], { cwd: dir, env: { GIT_AUTHOR_NAME: "t", GIT_AUTHOR_EMAIL: "t@t", GIT_COMMITTER_NAME: "t", GIT_COMMITTER_EMAIL: "t@t" } });
     assert.equal(result.status, 0, result.stderr);
     assert.equal(result.stdout, "The exercise exercises/test_failure.ts has been reset\n");
-    assert.equal(readFileSync(file, "utf8"), original);
+    // Git may restore the file with CRLF line endings (core.autocrlf on Windows).
+    const lf = (text: string): string => text.replaceAll("\r\n", "\n");
+    assert.equal(lf(readFileSync(file, "utf8")), lf(original));
   });
 
   test("the watch mode needs a terminal", () => {
