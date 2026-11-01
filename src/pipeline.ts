@@ -16,6 +16,8 @@ export interface ExerciseRunOptions extends CheckOptions {
   readonly cwd: string;
   readonly color: boolean;
   readonly notes?: Readonly<Record<string, string>>;
+  /** Show only the first problems in full (the watch mode). */
+  readonly maxProblems?: number;
   readonly timeoutMs?: number;
 }
 
@@ -52,6 +54,7 @@ export async function runExerciseFile(
       cwd: options.cwd,
       color: options.color,
       ...(options.notes === undefined ? {} : { notes: options.notes }),
+      ...(options.maxProblems === undefined ? {} : { maxProblems: options.maxProblems }),
     });
   }
 

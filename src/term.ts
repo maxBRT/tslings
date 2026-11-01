@@ -66,9 +66,35 @@ export function write(text: string): void {
   process.stdout.write(text);
 }
 
+/**
+ * Exit quietly when whoever reads stdout or stderr goes away, like `head` in
+ * `tslings run | head` once it has its lines. Without a listener, the write
+ * error (EPIPE) crashes tslings with a stack trace.
+ */
+export function exitQuietlyOnClosedOutput(): void {
+  for (const stream of [process.stdout, process.stderr]) {
+    stream.on("error", (error: NodeJS.ErrnoException) => {
+      if (error.code !== "EPIPE") throw error;
+      process.exit();
+    });
+  }
+}
+
 export interface TerminalSize {
   readonly columns: number;
   readonly rows: number;
+}
+
+/** The widest prose tslings prints: longer lines are hard to read, even on a wide terminal. */
+export const MAX_OUTPUT_WIDTH = 100;
+
+/**
+ * How wide messages and notes may be: the terminal's width (at most
+ * `MAX_OUTPUT_WIDTH`), or `MAX_OUTPUT_WIDTH` when stdout isn't a terminal.
+ */
+export function outputWidth(stream: Pick<NodeJS.WriteStream, "isTTY" | "columns"> = process.stdout): number {
+  const columns = stream.isTTY === true ? Number(stream.columns) : 0;
+  return columns > 0 ? Math.min(columns, MAX_OUTPUT_WIDTH) : MAX_OUTPUT_WIDTH;
 }
 
 /** The terminal size, or 80×24 when stdout isn't a terminal. */

@@ -1,10 +1,11 @@
 // The CLI run as a subprocess, like rustlings' `tests/integration_tests.rs`.
 
 import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, test } from "node:test";
-import { cli, communityExercises, fakePackage, sh, temporaryDir } from "./helpers.ts";
+import { cli, communityExercises, fakePackage, MAIN, sh, temporaryDir } from "./helpers.ts";
 
 describe("community exercises", () => {
   test("run: compilation success", () => {
@@ -32,7 +33,7 @@ describe("community exercises", () => {
   test("run: test failure", () => {
     const result = cli(["run", "test_failure"], { cwd: communityExercises() });
     assert.equal(result.status, 1);
-    assert.match(result.stdout, /42 !== 41/);
+    assert.match(result.stdout, /expected: 41\n {4}actual: {3}42\n/);
   });
 
   test("run: exercise not in info.toml", () => {
@@ -81,6 +82,23 @@ describe("community exercises", () => {
     const result = cli(["check-all"], { cwd: dir });
     assert.equal(result.status, 0, result.stdout);
     assert.match(result.stdout, /You made it to the finish line!/);
+  });
+
+  // `tslings run | head`: head stops reading after its lines. Windows pipes report it differently.
+  test("output to a closed pipe ends quietly", { skip: process.platform === "win32" }, async () => {
+    const env: NodeJS.ProcessEnv = { ...process.env, NO_COLOR: "1" };
+    delete env.NODE_TEST_CONTEXT;
+    const child = spawn(process.execPath, [MAIN, "run", "compilation_failure"], {
+      cwd: communityExercises(),
+      stdio: ["ignore", "pipe", "pipe"],
+      env,
+    });
+    // Nobody reads stdout: every write fails with EPIPE.
+    child.stdout.destroy();
+    let stderr = "";
+    child.stderr.setEncoding("utf8").on("data", (chunk: string) => (stderr += chunk));
+    await new Promise((resolve) => child.on("close", resolve));
+    assert.equal(stderr, "");
   });
 
   test("reset uses git stash for community exercises", () => {
@@ -306,7 +324,7 @@ describe("dev", () => {
     assert.match(cli(["dev", "check"], { cwd: project }).stderr, /Unknown lint rule `no-anything`/);
 
     info("[exercises.error_notes]\nTS999x = \"note\"\n");
-    assert.match(cli(["dev", "check"], { cwd: project }).stderr, /neither a TypeScript error code/);
+    assert.match(cli(["dev", "check"], { cwd: project }).stderr, /doesn't start with a TypeScript error code/);
 
     info("strict_clippy = true\n");
     assert.match(cli(["dev", "check"], { cwd: project }).stderr, /Unknown key `strict_clippy`/);

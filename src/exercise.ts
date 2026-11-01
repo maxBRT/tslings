@@ -43,6 +43,12 @@ export function extraFilePaths(base: "exercises" | "solutions", exercise: Exerci
   return exercise.extraFiles.map((file) => `${exerciseDir(base, exercise)}/${file}`);
 }
 
+export interface RunExerciseOptions {
+  readonly color: boolean;
+  /** Show only the first type errors and lints in full (the watch mode). */
+  readonly maxProblems?: number;
+}
+
 export interface RunOutcome {
   readonly success: boolean;
   /** What the learner sees: type errors, lints, test results or the program's output. */
@@ -75,13 +81,13 @@ export class ExerciseRunner {
   }
 
   /** Check the exercise file. */
-  runExercise(exercise: ExerciseInfo, options: { readonly color: boolean }): Promise<RunOutcome> {
-    return this.#run(exercise, exercisePath(exercise), exercise.strictLint, options.color);
+  runExercise(exercise: ExerciseInfo, options: RunExerciseOptions): Promise<RunOutcome> {
+    return this.#run(exercise, exercisePath(exercise), exercise.strictLint, options);
   }
 
   /** Check the exercise's solution. Solutions must pass with style lints as errors. */
-  runSolution(exercise: ExerciseInfo, options: { readonly color: boolean }): Promise<RunOutcome> {
-    return this.#run(exercise, solutionPath(exercise), true, options.color);
+  runSolution(exercise: ExerciseInfo, options: RunExerciseOptions): Promise<RunOutcome> {
+    return this.#run(exercise, solutionPath(exercise), true, options);
   }
 
   /** Type-check and lint a file without running it (used for extra files). */
@@ -95,7 +101,8 @@ export class ExerciseRunner {
     return { success: ok, output };
   }
 
-  async #run(exercise: ExerciseInfo, file: string, strictLint: boolean, color: boolean): Promise<RunOutcome> {
+  async #run(exercise: ExerciseInfo, file: string, strictLint: boolean, options: RunExerciseOptions): Promise<RunOutcome> {
+    const { color } = options;
     const path = resolve(this.#root, file);
     if (!existsSync(path)) {
       return { success: false, output: `${paint(["bold", "red"], "error", color)}: the file ${file} doesn't exist\n` };
@@ -111,6 +118,7 @@ export class ExerciseRunner {
       // Imported sibling modules may have changed too.
       extraFiles: extraFilePaths(base, exercise).map((extra) => resolve(this.#root, extra)),
       notes: exercise.errorNotes,
+      ...(options.maxProblems === undefined ? {} : { maxProblems: options.maxProblems }),
     });
     return { success: result.success, output: result.output };
   }

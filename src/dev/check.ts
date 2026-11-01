@@ -14,6 +14,7 @@ import {
   loadInfoFile,
   solutionPath,
 } from "../info-file.ts";
+import { parseNoteKey } from "../notes.ts";
 import { checkParallelism, runPool } from "../pool.ts";
 import { paint, ProgressCounter, stdoutColor, write } from "../term.ts";
 import { detectSource, type ExerciseSource, writeCheckerConfig } from "../workspace.ts";
@@ -114,14 +115,33 @@ function checkLintSettings(exercise: ExerciseInfo): void {
       throw new Error(`Unknown lint rule \`${rule}\` in \`allow_lints\` of the exercise \`${exercise.name}\`. Known rules: ${LINT_RULES.join(", ")}`);
     }
   }
+  checkErrorNotes(exercise);
+}
+
+/** `error_notes` keys are an error code or lint rule, optionally followed by a message filter. */
+export function checkErrorNotes(exercise: Pick<ExerciseInfo, "name" | "errorNotes">): void {
+  const seen = new Map<string, string>();
   for (const key of Object.keys(exercise.errorNotes)) {
-    if (!/^TS\d+$/.test(key) && !LINT_RULES.includes(key)) {
+    const where = `in \`error_notes\` of the exercise \`${exercise.name}\``;
+    const parsed = parseNoteKey(key);
+    if (parsed === undefined) {
       throw new Error(
-        `The key \`${key}\` in \`error_notes\` of the exercise \`${exercise.name}\` is neither a TypeScript error code (like \`TS2322\`) nor a lint rule`,
+        `The key \`${key}\` ${where} is malformed. Write an error code or lint rule, optionally followed by a space and the text the message must contain: \`TS2339\`, \`"TS2339 radius"\` or \`"TS2339 'radius'"\``,
       );
     }
+    if (!/^TS\d+$/.test(parsed.code) && !LINT_RULES.includes(parsed.code)) {
+      throw new Error(
+        `The key \`${key}\` ${where} doesn't start with a TypeScript error code (like \`TS2322\`) or a lint rule`,
+      );
+    }
+    const normalized = `${parsed.code}\0${parsed.filter ?? ""}`;
+    const duplicate = seen.get(normalized);
+    if (duplicate !== undefined) {
+      throw new Error(`The keys \`${duplicate}\` and \`${key}\` ${where} are for the same messages`);
+    }
+    seen.set(normalized, key);
     if (exercise.errorNotes[key]?.trim() === "") {
-      throw new Error(`The note \`${key}\` in \`error_notes\` of the exercise \`${exercise.name}\` is empty`);
+      throw new Error(`The note \`${key}\` ${where} is empty`);
     }
   }
 }

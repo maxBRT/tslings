@@ -13,6 +13,7 @@ import { nodeVersionError } from "./node-version.ts";
 import { run } from "./run.ts";
 import {
   clearTerminal,
+  exitQuietlyOnClosedOutput,
   installTerminalCleanup,
   paint,
   pressEnterPrompt,
@@ -163,6 +164,7 @@ async function runCommand(args: Args, appState: AppState): Promise<number> {
   }
 }
 
+exitQuietlyOnClosedOutput();
 const versionError = nodeVersionError();
 if (versionError !== undefined) {
   process.stderr.write(`${versionError}\n`);

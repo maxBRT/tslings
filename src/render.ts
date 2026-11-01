@@ -7,12 +7,17 @@
 //   7 | const count: number = "three";
 //     |       ^^^^^
 //     = note: ...
+//
+// Messages, notes and types are wrapped to the terminal width, so that the
+// terminal never cuts a word; code frames never are.
 
 import { basename, relative } from "node:path";
 import { styleText } from "node:util";
 import type { Problem } from "./checker.ts";
-import { noteFor } from "./notes.ts";
+import { exerciseNoteFor, noteFor } from "./notes.ts";
+import { outputWidth } from "./term.ts";
 import type { ShownType } from "./type-tests.ts";
+import { wrapText } from "./wrap.ts";
 
 type Style = Parameters<typeof styleText>[0];
 
@@ -20,9 +25,19 @@ export interface RenderOptions {
   /** Paths are shown relative to this directory. */
   readonly cwd: string;
   readonly color: boolean;
-  /** Per-exercise explanations keyed by `TS2322` or lint rule name. They win over built-in notes. */
+  /**
+   * Per-exercise explanations keyed by `TS2322` or a lint rule name, optionally
+   * followed by a text the message must contain. They win over built-in notes.
+   */
   readonly notes?: Readonly<Record<string, string>>;
+  /** Messages, notes and types are wrapped to this many columns (code frames never are). */
+  readonly width?: number;
+  /** Show the first problems in full and only count the others (the watch mode). */
+  readonly maxProblems?: number;
 }
+
+/** Narrower than this, wrapping would leave a word or two per line: lines stay longer instead. */
+const MIN_TEXT_WIDTH = 24;
 
 export function renderProblems(
   problems: readonly Problem[],
@@ -30,17 +45,31 @@ export function renderProblems(
   options: RenderOptions,
 ): string {
   const paint = (style: Style, text: string): string =>
-    options.color ? styleText(style, text, { validateStream: false }) : text;
+    options.color && text !== "" ? styleText(style, text, { validateStream: false }) : text;
+  const width = options.width ?? outputWidth();
+  /** `text` wrapped into lines that start at column `start`. */
+  const wrapAt = (text: string, start: number): string[] => {
+    const room = Math.max(MIN_TEXT_WIDTH, width - start);
+    return wrapText(text, room, room);
+  };
 
   // A note is shown in full under the first error it explains, not repeated under each one.
   const shownNotes = new Set<string>();
+  const shown = options.maxProblems === undefined ? problems : problems.slice(0, Math.max(1, options.maxProblems));
 
-  const blocks = problems.map((problem) => {
+  const blocks = shown.map((problem) => {
     const lines: string[] = [];
     const color: "red" | "yellow" = problem.severity === "error" ? "red" : "yellow";
-    lines.push(
-      `${paint(["bold", color], `${problem.severity}[${problem.code}]`)}${paint("bold", `: ${problem.message}`)}`,
+    const label = `${problem.severity}[${problem.code}]`;
+    // The message's next lines start under its first one, unless the label takes half the line.
+    const headerIndent = label.length + 2 <= width / 2 ? label.length + 2 : 4;
+    const [first = "", ...rest] = wrapText(
+      problem.message,
+      Math.max(MIN_TEXT_WIDTH, width - label.length - 2),
+      Math.max(MIN_TEXT_WIDTH, width - headerIndent),
     );
+    lines.push(`${paint(["bold", color], label)}${paint("bold", `: ${first}`)}`);
+    for (const line of rest) lines.push(`${" ".repeat(headerIndent)}${paint("bold", line)}`);
 
     const source = sources.get(problem.file);
     if (source !== undefined && problem.file !== "") {
@@ -51,23 +80,33 @@ export function renderProblems(
 
     const gutter = " ".repeat(gutterWidth(source, problem.end));
     const equals = `${gutter} ${paint(["bold", "blue"], "=")}`;
-    for (const detail of problem.details) {
-      lines.push(`${equals} ${detail}`);
-    }
-    lines.push(...typeLines(problem.types ?? [], gutter, equals));
+    /** `= name: text`, or `= text` without a name, the text's next lines aligned on its first one. */
+    const field = (name: string | undefined, text: string, style: Style = "bold"): void => {
+      // The message chain shows its depth with leading spaces.
+      const depth = name === undefined ? (/^ */.exec(text)?.[0] ?? "") : "";
+      const prefix = name === undefined ? depth : `${name}: `;
+      const start = gutter.length + 3 + prefix.length;
+      const [head = "", ...tail] = wrapAt(text.slice(depth.length), start);
+      lines.push(`${equals} ${name === undefined ? depth : `${paint(style, name)}: `}${head}`);
+      for (const line of tail) lines.push(`${" ".repeat(start)}${line}`);
+    };
+
+    for (const detail of problem.details) field(undefined, detail);
+    lines.push(...typeLines(problem.types ?? [], gutter, equals, width));
+    if (problem.typeNote !== undefined) field("note", problem.typeNote);
     for (const related of problem.related) {
       const relatedSource = isLibraryFile(related.file) ? undefined : sources.get(related.file);
       const path = displayPath(related.file, options.cwd);
       const where = relatedSource === undefined ? path : `${path}:${formatPosition(relatedSource, related.start)}`;
-      lines.push(`${equals} ${paint("bold", "related")}: ${related.message} (${where})`);
+      // Right where the error is, the location would only repeat the header's.
+      const samePlace = related.file === problem.file && related.start === problem.start;
+      field("related", samePlace ? related.message : `${related.message} (${where})`);
     }
 
-    const note = options.notes?.[problem.code] ?? problem.note ?? noteFor(problem.code);
+    const note = exerciseNoteFor(options.notes, problem) ?? problem.note ?? noteFor(problem.code);
     if (note !== undefined && !shownNotes.has(note)) {
       shownNotes.add(note);
-      const [first = "", ...rest] = wrap(note, 76);
-      lines.push(`${equals} ${paint(["bold", "cyan"], "help")}: ${first}`);
-      for (const line of rest) lines.push(`${gutter}         ${line}`);
+      field("help", note, ["bold", "cyan"]);
     }
     return lines.join("\n");
   });
@@ -78,7 +117,27 @@ export function renderProblems(
   if (errors > 0) summary.push(paint(["bold", "red"], `${errors} error${errors === 1 ? "" : "s"}`));
   if (warnings > 0) summary.push(paint(["bold", "yellow"], `${warnings} warning${warnings === 1 ? "" : "s"}`));
 
-  return `${blocks.join("\n\n")}\n\n${summary.join(", ")}\n`;
+  const hidden = problems.slice(shown.length);
+  let more = "";
+  if (hidden.length > 0) {
+    const [count, advice] = moreProblems(hidden);
+    // Too long for one line, the advice goes on the next one, under the count.
+    if (advice === undefined) more = `${count}\n\n`;
+    else if (count.length + 1 + advice.length <= width) more = `${count} ${advice}\n\n`;
+    else more = `${count}\n${wrapAt(advice, 4).map((line) => `    ${line}`).join("\n")}\n\n`;
+  }
+  return `${blocks.join("\n\n")}\n\n${more}${summary.join(", ")}\n`;
+}
+
+/** `... and 7 more errors.` for the problems that aren't shown, and what to do about them. */
+function moreProblems(hidden: readonly Problem[]): [count: string, advice?: string] {
+  const errors = hidden.filter((problem) => problem.severity === "error").length;
+  const warnings = hidden.length - errors;
+  const counts: string[] = [];
+  if (errors > 0) counts.push(`${errors} more error${errors === 1 ? "" : "s"}`);
+  if (warnings > 0) counts.push(`${warnings} more warning${warnings === 1 ? "" : "s"}`);
+  const count = `... and ${counts.join(" and ")}.`;
+  return errors > 0 ? [count, "Fix the first ones: later errors are often caused by them."] : [count];
 }
 
 function codeFrame(
@@ -180,27 +239,30 @@ function displayPath(file: string, cwd: string): string {
   return /^lib\..*\.d\.ts$/.test(basename(path)) ? basename(path) : path.slice(index + "/node_modules/".length);
 }
 
-/** Types longer than this are split into one union member per line. */
-const MAX_TYPE_LINE = 100;
-
 /**
  * `= expected: A` and `= found:    B`, aligned so they're easy to compare. A
- * long union gets one member per line.
+ * union too long for one line gets one member per line, and a type still too
+ * long is wrapped after its `;` and `,`.
  */
-function typeLines(types: readonly ShownType[], gutter: string, equals: string): string[] {
-  const width = Math.max(0, ...types.map((shown) => shown.label.length));
+function typeLines(types: readonly ShownType[], gutter: string, equals: string, width: number): string[] {
+  const labelWidth = Math.max(0, ...types.map((shown) => shown.label.length));
   const lines: string[] = [];
   for (const { label, type } of types) {
-    const prefix = `${label}:${" ".repeat(width - label.length)} `;
+    const prefix = `${label}:${" ".repeat(labelWidth - label.length)} `;
+    const start = gutter.length + 3 + prefix.length;
+    const indent = " ".repeat(start);
+    const room = (used: number): number => Math.max(MIN_TEXT_WIDTH, width - used);
     const members = splitUnion(type);
-    if (gutter.length + 3 + prefix.length + type.length <= MAX_TYPE_LINE || members.length < 2) {
-      lines.push(`${equals} ${prefix}${type}`);
+    if (start + type.length <= width || members.length < 2) {
+      const [first = "", ...rest] = wrapText(type, room(start), room(start + 2), "type");
+      lines.push(`${equals} ${prefix}${first}`, ...rest.map((line) => `${indent}  ${line}`));
       continue;
     }
-    const [first = "", ...rest] = members;
-    lines.push(`${equals} ${prefix}${first}`);
-    const indent = " ".repeat(gutter.length + 3 + prefix.length);
-    for (const member of rest) lines.push(`${indent}| ${member}`);
+    members.forEach((member, index) => {
+      const [first = "", ...rest] = wrapText(member, room(index === 0 ? start : start + 2), room(start + 4), "type");
+      lines.push(index === 0 ? `${equals} ${prefix}${first}` : `${indent}| ${first}`);
+      for (const line of rest) lines.push(`${indent}    ${line}`);
+    });
   }
   return lines;
 }
@@ -229,40 +291,4 @@ export function splitUnion(type: string): string[] {
   }
   members.push(type.slice(start));
   return members;
-}
-
-/** Wrap text to `width` columns, never inside a `code span`. */
-function wrap(text: string, width: number): string[] {
-  const lines: string[] = [];
-  for (const paragraph of text.split("\n")) {
-    let line = "";
-    for (const word of words(paragraph)) {
-      if (line.length > 0 && line.length + word.length + 1 > width) {
-        lines.push(line);
-        line = word;
-      } else {
-        line = line.length === 0 ? word : `${line} ${word}`;
-      }
-    }
-    lines.push(line);
-  }
-  return lines;
-}
-
-/** Split on spaces, except the spaces inside `code spans`. */
-function words(paragraph: string): string[] {
-  const result: string[] = [];
-  let word = "";
-  let inCode = false;
-  for (const char of paragraph) {
-    if (char === "`") inCode = !inCode;
-    if (char === " " && !inCode) {
-      result.push(word);
-      word = "";
-    } else {
-      word += char;
-    }
-  }
-  result.push(word);
-  return result;
 }

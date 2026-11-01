@@ -63,8 +63,9 @@ test("the file watcher knows which exercises a file belongs to", () => {
 });
 
 test("Node.js version check", () => {
-  assert.equal(nodeVersionError("22.18.0"), undefined);
-  assert.equal(nodeVersionError("24.1.0"), undefined);
-  assert.match(nodeVersionError("22.17.1") ?? "", /needs Node\.js 22\.18 or newer[\s\S]*You are using Node\.js v22\.17\.1/);
+  assert.equal(nodeVersionError("24.0.0"), undefined);
+  assert.equal(nodeVersionError("25.1.0"), undefined);
+  assert.match(nodeVersionError("22.18.0") ?? "", /needs Node\.js 24 or newer[\s\S]*You are using Node\.js v22\.18\.0/);
+  assert.match(nodeVersionError("23.11.1") ?? "", /needs Node\.js 24 or newer/);
   assert.match(nodeVersionError("20.11.0") ?? "", /You are using Node\.js v20\.11\.0/);
 });

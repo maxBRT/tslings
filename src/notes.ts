@@ -3,7 +3,11 @@
 // TypeScript's messages are precise but terse. These notes play the role of
 // rustc's `help:` lines: they say what usually causes the error and how to fix
 // it. Exercises can override a note for one exercise with `error_notes` in
-// `info.toml`.
+// `info.toml`, keyed by the error code and optionally by a part of the message:
+//
+//   [exercises.error_notes]
+//   TS2339 = "..."            # any TS2339
+//   "TS2339 'radius'" = "..." # only a TS2339 whose message contains `radius`
 
 const NOTES: Readonly<Record<string, string>> = {
   TS1005: "The parser expected a specific token here, often a missing bracket, comma or semicolon just before this spot.",
@@ -14,7 +18,7 @@ const NOTES: Readonly<Record<string, string>> = {
   TS2322: "The value on the right doesn't fit the type on the left. Read the message from the end: it names the exact property or member that doesn't match.",
   TS2339: "This property doesn't exist on the type TypeScript sees. If the value is a union, the property must exist on every member: narrow it first (with `typeof`, `in`, or a discriminant check). If its type is a type parameter like `T`, say what `T` must have where it's declared: `<T extends { id: string }>`.",
   TS2344: "A type argument doesn't satisfy its constraint. In tslings, `Expect<Equal<A, B>>` reports this when `A` (found) isn't exactly the same type as `B` (expected): compare them carefully.",
-  TS2345: "The argument you pass doesn't match the parameter's type. Either change the value, or change the function's parameter type if the function is wrong.",
+  TS2345: "The argument doesn't match what the function accepts. Check the value you pass, or, if you wrote the function, its parameter type.",
   TS2349: "You're calling something that isn't a function, or a union where not every member is callable.",
   TS2355: "A function whose declared return type isn't `void` or `any` must return a value on every path.",
   TS2366: "Some code path of this function ends without a `return`. Add the missing case, or make the last branch exhaustive.",
@@ -71,4 +75,57 @@ const NOTES: Readonly<Record<string, string>> = {
 export function noteFor(code: string): string | undefined {
   const note = NOTES[code];
   return note === undefined || note === "" ? undefined : note;
+}
+
+/** An `error_notes` key: `TS2339`, or `TS2339 radius` / `TS2339 'radius'` for messages that contain `radius`. */
+export interface NoteKey {
+  /** A TypeScript error code like `TS2339`, or a lint rule name. */
+  readonly code: string;
+  /** Only for problems whose message contains this text. */
+  readonly filter: string | undefined;
+}
+
+/**
+ * Split an `error_notes` key into its code and its message filter. Returns
+ * `undefined` for a malformed key: an empty code or filter.
+ *
+ * A filter wrapped in matching quotes (`TS2339 'all'`) has them removed. Any
+ * other filter is taken literally, so `TS2339 'radius' does not` matches
+ * messages containing `'radius' does not`, quotes included.
+ */
+export function parseNoteKey(key: string): NoteKey | undefined {
+  const space = key.indexOf(" ");
+  if (space === -1) return key === "" ? undefined : { code: key, filter: undefined };
+  const code = key.slice(0, space);
+  let filter = key.slice(space + 1).trim();
+  const quote = filter[0];
+  if ((quote === "'" || quote === '"') && filter.length >= 2 && filter.endsWith(quote)) {
+    filter = filter.slice(1, -1);
+  }
+  return code === "" || filter === "" ? undefined : { code, filter };
+}
+
+interface NotedProblem {
+  readonly code: string;
+  readonly message: string;
+  readonly details: readonly string[];
+}
+
+/**
+ * The exercise's note for a problem, from its `error_notes`. A key with a
+ * message filter wins over the plain code, and a longer filter over a shorter
+ * one: the more specific note is the more helpful.
+ */
+export function exerciseNoteFor(notes: Readonly<Record<string, string>> | undefined, problem: NotedProblem): string | undefined {
+  if (notes === undefined) return undefined;
+  const text = [problem.message, ...problem.details].join("\n");
+  let best: { readonly note: string; readonly specificity: number } | undefined;
+  for (const [key, note] of Object.entries(notes)) {
+    const parsed = parseNoteKey(key);
+    if (parsed === undefined || parsed.code !== problem.code) continue;
+    if (parsed.filter !== undefined && !text.includes(parsed.filter)) continue;
+    const specificity = parsed.filter === undefined ? -1 : parsed.filter.length;
+    if (best === undefined || specificity > best.specificity) best = { note, specificity };
+  }
+  return best?.note;
 }

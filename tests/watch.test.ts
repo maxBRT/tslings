@@ -81,6 +81,11 @@ test("watch mode: hint, rerun on save, list, quit", { skip: !hasScript && "needs
     at = await terminal.waitFor(/Exercise done ✓/, at);
     saveAtomically(file, original);
     at = await terminal.waitFor(/error\[TS2339\]/, at);
+    // Many errors: the first three are shown in full, the others only counted.
+    const before = at;
+    saveAtomically(file, "console.lgo(1);\n".repeat(5));
+    at = await terminal.waitFor(/\n\.\.\. and 2 more errors\. Fix the first ones: later errors are often caused by them\.\n\n5 errors\n/, at);
+    assert.equal(terminal.text.slice(before, at).match(/error\[TS2339\]/g)?.length, 3);
     writeFileSync(file, original.replace("lgo", "log"));
     at = await terminal.waitFor(/Output\nHello world!\n\nExercise done ✓\nSolution for comparison: solutions\/00_intro\/intro2\.ts/, at);
     at = await terminal.waitFor(/n:next \/ h:hint \/ l:list \/ x:reset \/ q:quit \?/, at);

@@ -58,11 +58,16 @@ test("check progress grid", () => {
 });
 
 test("the check progress grid is only redrawn live when it fits on the screen", () => {
-  // 121 exercises, 25 per line at 100 columns: 5 lines, plus the title and the legend.
-  assert.equal(new CheckProgressVisualizer(121, { columns: 100, rows: 7 }, true, true).live, true);
-  assert.equal(new CheckProgressVisualizer(121, { columns: 100, rows: 6 }, true, true).live, false);
+  // Any number of exercises: the grid has ceil(n / cells per line) lines, below the title and the legend.
+  for (const n of [7, 50, 125, 300]) {
+    // 25 numbers per line at 100 columns; the title and the legend take one line each.
+    const wide = 2 + Math.ceil(n / 25);
+    assert.equal(new CheckProgressVisualizer(n, { columns: 100, rows: wide }, true, true).live, true, `${n} exercises, ${wide} rows`);
+    assert.equal(new CheckProgressVisualizer(n, { columns: 100, rows: wide - 1 }, true, true).live, false, `${n} exercises, ${wide - 1} rows`);
+    // At 30 columns, the legend takes two lines, then 7 numbers per line.
+    const narrow = 3 + Math.ceil(n / 7);
+    assert.equal(new CheckProgressVisualizer(n, { columns: 30, rows: narrow }, true, true).live, true, `${n} exercises, ${narrow} rows`);
+    assert.equal(new CheckProgressVisualizer(n, { columns: 30, rows: narrow - 1 }, true, true).live, false, `${n} exercises, ${narrow - 1} rows`);
+  }
   assert.equal(new CheckProgressVisualizer(3, { columns: 80, rows: 24 }, false, true).live, false, "never without a terminal");
-  // At 30 columns, the legend takes two lines, then 18 lines of 7 numbers.
-  assert.equal(new CheckProgressVisualizer(121, { columns: 30, rows: 21 }, true, true).live, true);
-  assert.equal(new CheckProgressVisualizer(121, { columns: 30, rows: 20 }, true, true).live, false);
 });

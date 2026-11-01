@@ -7,6 +7,12 @@ import { clearTerminal, paint, progressBar, stdoutColor, write } from "../term.t
 import type { InputPause } from "./events.ts";
 import type { TerminalEventHandler } from "./terminal-event.ts";
 
+/**
+ * Problems shown in full in the watch mode. More would push the first one, the
+ * most useful, off the screen; the others are only counted.
+ */
+export const WATCH_MAX_PROBLEMS = 3;
+
 type DoneStatus = { readonly done: true; readonly solutionPath: string | undefined } | { readonly done: false };
 
 export class WatchState {
@@ -48,7 +54,7 @@ export class WatchState {
       // The editor opens while the exercise is checked.
       const [, { success, output }] = await Promise.all([
         appState.openEditor(),
-        appState.runner.runExercise(exercise, { color: stdoutColor }),
+        appState.runner.runExercise(exercise, { color: stdoutColor, maxProblems: WATCH_MAX_PROBLEMS }),
       ]);
       const shown = `${restored}${output}`.trimEnd();
       this.#output = shown === "" ? "" : `${shown}\n\n`;

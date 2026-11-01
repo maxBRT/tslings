@@ -13,7 +13,7 @@ https://www.typescriptlang.org/docs/handbook/2/objects.html#intersection-types""
 
 [exercises.error_notes]
 TS2339 = "`Product`, `DigitalProduct` and `CartLine` are still empty object types, so TypeScript doesn't know about any of their properties yet. Describe them as the TODOs say."
-TS2344 = "A type test failed: compare the TODO of the type on the `found` line with the `expected` line (for an interface, `found` only shows its name). `CartLine` must be written with `&`: listing the four properties again gives the same shape, but the type test tells the two spellings apart."
+TS2344 = "A type test failed: compare the TODO of the type on the `found` line with the `expected` line. `CartLine` must be written with `&`: listing the four properties again gives the same shape, but the type test tells the two spellings apart."
 
 [[exercises]]
 name = "objects2"

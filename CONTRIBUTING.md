@@ -89,6 +89,7 @@ extra_files = ["shapes.ts"]      # sibling modules the exercise imports (see bel
 
 [exercises.error_notes]          # a help line for the error you expect learners to hit
 TS2339 = "`radius` only exists on circles. Check `kind` before reading it."
+"TS2322 'undefined'" = "`find` may come back empty-handed: say so in the return type."
 ```
 
 Extra files are provided, not edited: tslings writes them again before each check,
@@ -100,6 +101,15 @@ and `solutions/<dir>/` (`dev check` compares them), and start it with
 the learner will see first, so explain it in their terms. Keys are TypeScript
 error codes (`TS2322`) or lint rule names. Common errors already have a generic
 note in [`src/notes.ts`](src/notes.ts).
+
+When one code covers several mistakes, add a message filter after the code and a
+space: `"TS2339 radius"` or `"TS2339 'radius'"` (quotes around the filter are
+optional, and let it start or end with a space). That note is only shown when the
+error's message contains the filter, `Property 'radius' does not exist...` here.
+The message chain under it counts too. When several keys match, the one with the
+longest filter wins, and the plain `TS2339` is the fallback. TOML needs quotes
+around keys with spaces. `dev check` rejects malformed keys and two keys with the
+same filter.
 
 ## Pull requests
 

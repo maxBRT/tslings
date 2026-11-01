@@ -169,6 +169,94 @@ describe("failing type tests show both types", () => {
     assert.deepEqual(problem?.types, [{ label: "both types are", type: "{ a: 1; }" }]);
   });
 
+  /** `expected` and `found` of the snippet's only failing type test, and the note if any. */
+  const compare = (source: string): { expected?: string; found?: string; note?: string } => {
+    const failing = problems(`${helpers}${source}`).filter((problem) => problem.code === "TS2344");
+    assert.equal(failing.length, 1, JSON.stringify(failing));
+    const [problem] = failing;
+    const result: { expected?: string; found?: string; note?: string } = {};
+    for (const { label, type } of problem?.types ?? []) {
+      if (label === "expected" || label === "found") result[label] = type;
+    }
+    if (problem?.typeNote !== undefined) result.note = problem.typeNote;
+    return result;
+  };
+
+  test("interfaces and aliases show their members on both sides", () => {
+    assert.deepEqual(compare("interface Product {}\ntype _t = Expect<Equal<Product, { id: string; name: string }>>;\n"), {
+      expected: "{ id: string; name: string; }",
+      found: "{}",
+    });
+    // In a union, too, and one level deep only.
+    assert.deepEqual(
+      compare(
+        "interface User { name: string }\ntype Product = { sku: string; owner: User };\n" +
+          "declare function find(): Product;\ntype _t = Expect<Equal<ReturnType<typeof find>, Product | undefined>>;\n",
+      ),
+      { expected: "{ sku: string; owner: User; } | undefined", found: "{ sku: string; owner: User; }" },
+    );
+    assert.deepEqual(compare("interface Box<T> { value: T }\ntype _t = Expect<Equal<Box<string>, Box<number> | null>>;\n"), {
+      expected: "{ value: number; } | null",
+      found: "{ value: string; }",
+    });
+  });
+
+  test("modifiers are shown, and named when they are the only difference", () => {
+    assert.deepEqual(
+      compare("interface Settings { readonly theme: string; size?: number; label?: string | undefined }\ntype _t = Expect<Equal<Settings, { theme: string; size: number; label?: string | undefined }>>;\n"),
+      {
+        expected: "{ theme: string; size: number; label?: string | undefined; }",
+        found: "{ readonly theme: string; size?: number; label?: string | undefined; }",
+        note: "The types only differ in their `readonly` and optional (`?`) modifiers.",
+      },
+    );
+    assert.equal(compare("type _t = Expect<Equal<Readonly<{ a: 1 }>, { a: 1 }>>;\n").found, "{ readonly a: 1; }");
+  });
+
+  test("types that print the same get a hint", () => {
+    const { expected, found, note } = compare(
+      "export function make() {\n  interface User { a: 1 }\n  const u: User = { a: 1 };\n  return { u };\n}\n" +
+        "interface User { a: 2 }\ntype _t = Expect<Equal<ReturnType<typeof make>, { u: User }>>;\n",
+    );
+    assert.equal(expected, "{ u: User; }");
+    assert.equal(found, expected);
+    assert.match(note ?? "", /^Both types print the same/);
+  });
+
+  test("an intersection and one object type with the same properties are told apart", () => {
+    const { expected, found, note } = compare(
+      "type Product = { id: string };\ntype _t = Expect<Equal<{ id: string; quantity: number }, Product & { quantity: number }>>;\n",
+    );
+    assert.equal(expected, "{ id: string; } & { quantity: number; }");
+    assert.equal(found, "{ id: string; quantity: number; }");
+    assert.match(note ?? "", /`expected` is an intersection/);
+    // Same property names, but a property type differs too: writing `&` wouldn't be enough.
+    assert.deepEqual(compare("type _t = Expect<Equal<{ a: string; b: string }, { a: string } & { b: number }>>;\n"), {
+      expected: "{ a: string; } & { b: number; }",
+      found: "{ a: string; b: string; }",
+    });
+  });
+
+  test("huge types are shortened the way TypeScript does", () => {
+    const properties = Array.from({ length: 300 }, (_, index) => `p${index}: string;`).join(" ");
+    assert.equal(compare(`interface Big { ${properties} }\ntype _t = Expect<Equal<Big, {}>>;\n`).found, "Big");
+    const members = Array.from({ length: 200 }, (_, index) => `{ kind: "k${index}"; v: ${index} }`).join(" | ");
+    const { found = "" } = compare(`type _t = Expect<Equal<${members}, { kind: "a" }>>;\n`);
+    assert.ok(found.length < 1000, found);
+    assert.match(found, /\.\.\. \d+ more \.\.\./);
+  });
+
+  test("library types, classes, functions and tuples keep TypeScript's printing", () => {
+    assert.deepEqual(compare("class Money { cents = 0 }\ntype _t = Expect<Equal<Money, Date | Map<string, number> | [a: 1] | ((n: number) => string)>>;\n"), {
+      expected: "Date | Map<string, number> | ((n: number) => string) | [a: 1]",
+      found: "Money",
+    });
+    assert.deepEqual(compare("type _t = Expect<Equal<string | boolean | null, Record<\"a\", number>>>;\n"), {
+      expected: "{ a: number; }",
+      found: "string | boolean | null",
+    });
+  });
+
   test("other constraint errors are left alone", () => {
     const [problem] = problems("type Id<T extends string> = T;\nexport type Five = Id<5>;\n");
     assert.equal(problem?.code, "TS2344");

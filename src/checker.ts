@@ -43,6 +43,8 @@ export interface Problem {
   readonly details: readonly string[];
   /** Types to compare, e.g. both sides of a failing `Expect<Equal<A, B>>`. */
   readonly types?: readonly ShownType[];
+  /** What tells the two types apart, when it's hard to see. */
+  readonly typeNote?: string;
   /** Explanation shown below the message, written for learners. */
   readonly note?: string;
   readonly file: string;
@@ -230,7 +232,8 @@ function withTypeTests(problems: readonly Problem[], sourceFile: SourceFile, che
     const test = problem.code === "TS2344" ? tests.get(problem.start) : undefined;
     if (test === undefined || test.end !== problem.end || described >= MAX_DESCRIBED_TYPE_TESTS) return problem;
     described++;
-    return { ...problem, types: describeTypeTest(test, checker) };
+    const { types, note } = describeTypeTest(test, checker);
+    return { ...problem, types, ...(note === undefined ? {} : { typeNote: note }) };
   });
 }
 

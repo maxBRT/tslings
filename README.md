@@ -16,7 +16,7 @@ way experienced developers write it today, not JavaScript with annotations.
 
 ## Getting started
 
-You need [Node.js](https://nodejs.org) 22.18 or newer (24 recommended). Node runs
+You need [Node.js](https://nodejs.org) 24 or newer. Node runs
 TypeScript files directly, so there is no build step for your exercises.
 
 Install tslings:

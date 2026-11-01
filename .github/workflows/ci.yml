@@ -9,11 +9,14 @@ jobs:
   check:
     name: Node ${{ matrix.node }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    # Windows isn't tested by hand yet, and some tests assume POSIX paths.
+    # Its job runs so problems show up, without failing the whole check.
+    continue-on-error: ${{ matrix.os == 'windows-latest' }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        node: ["22.18", "24"]
+        node: ["24", "lts/*"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
