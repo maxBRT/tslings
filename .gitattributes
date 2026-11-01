@@ -1,0 +1,5 @@
+# Keep LF line endings everywhere: info.toml is compared with its generated
+# version, and the exercises are shown to learners as they are in the repo.
+* text=auto eol=lf
+*.png binary
+*.svg text eol=lf

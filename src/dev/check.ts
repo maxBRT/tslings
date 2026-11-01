@@ -291,7 +291,9 @@ export async function check(requireSolutions: boolean): Promise<void> {
   }
 
   if (source === "repo") {
-    if (hasCurriculum(".") && readFileSync(INFO_FILE_NAME, "utf8") !== assembleInfoToml(".").text) {
+    // Line endings don't count: Git may check files out with CRLF on Windows.
+    const lf = (text: string): string => text.replaceAll("\r\n", "\n");
+    if (hasCurriculum(".") && lf(readFileSync(INFO_FILE_NAME, "utf8")) !== lf(assembleInfoToml(".").text)) {
       throw new Error(
         "The file `info.toml` is outdated. Run `tslings dev update` (or `node scripts/assemble-info.ts`) to update it. Then run `tslings dev check` again",
       );
