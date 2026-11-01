@@ -19,11 +19,15 @@ way experienced developers write it today, not JavaScript with annotations.
 You need [Node.js](https://nodejs.org) 24 or newer. Node runs
 TypeScript files directly, so there is no build step for your exercises.
 
-Install tslings:
+Install tslings from GitHub:
 
 ```sh
-npm install --global github:maxBRT/tslings
+npm install --global https://github.com/maxBRT/tslings/archive/refs/heads/main.tar.gz
 ```
+
+Run the same command again later to update. (The shorter `github:maxBRT/tslings`
+form hits an npm 11 bug with global installs and leaves a broken link, so use the
+archive URL.)
 
 Create your exercise folder and start:
 

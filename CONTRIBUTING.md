@@ -28,7 +28,7 @@ node src/main.ts dev check  # check every official exercise and solution
 The CLI is written in TypeScript and runs on Node's built-in type stripping, so
 the source only uses erasable syntax (no `enum`, no `namespace`, no parameter
 properties). `npm run build` compiles it to `dist/`. That folder is committed, so
-`npm install --global github:maxBRT/tslings` works without a build step: run
+installing from GitHub (see the README) works without a build step: run
 `npm run build` and commit `dist/` along with your changes to `src/`. CI fails
 when the two don't match.
 
