@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import { resolve } from "node:path";
 import { describe, test } from "node:test";
+import { pathToFileURL } from "node:url";
 import { CheckProgressVisualizer, LineWriter, progressBar, supportsColor, terminalFileLink } from "../src/term.ts";
 
 describe("progress bar", () => {
@@ -37,7 +39,8 @@ describe("LineWriter", () => {
 });
 
 test("terminal file links (OSC 8)", () => {
-  assert.equal(terminalFileLink("x.ts", "/home/me/x.ts"), "\x1b]8;;file:///home/me/x.ts\x1b\\x.ts\x1b]8;;\x1b\\");
+  const target = resolve("/home/me/x.ts");
+  assert.equal(terminalFileLink("x.ts", target), `\x1b]8;;${pathToFileURL(target).href}\x1b\\x.ts\x1b]8;;\x1b\\`);
 });
 
 test("colour detection respects NO_COLOR, FORCE_COLOR and non-terminals", () => {

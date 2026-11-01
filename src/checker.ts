@@ -4,8 +4,8 @@
 // the first check, re-checking a changed file only takes a few milliseconds,
 // which is what keeps the watch mode responsive.
 
-import { readFileSync, realpathSync } from "node:fs";
-import { resolve, sep } from "node:path";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { NodeFlags, SyntaxKind } from "typescript/unstable/ast";
 import type { Node, SourceFile } from "typescript/unstable/ast";
 import {
@@ -29,6 +29,7 @@ import {
 } from "typescript/unstable/ast/is";
 import { API, DiagnosticCategory, fileNameToDocumentURI } from "typescript/unstable/sync";
 import type { Diagnostic, Project, Checker as TypeChecker } from "typescript/unstable/sync";
+import { longPath } from "./paths.ts";
 import { describeTypeTest, findTypeTests, type ShownType } from "./type-tests.ts";
 import { findUnsafeAny } from "./unsafe-any.ts";
 
@@ -136,20 +137,11 @@ const DEFINITE_ASSIGNMENT: RuleMessage = {
 };
 
 /**
- * A file path the way the TypeScript API names files: absolute, with `/` separators.
- * On Windows, short 8.3 names (`C:\Users\RUNNER~1`) are expanded too, so that the
- * path matches the one TypeScript found when it listed the project's files.
+ * A file path the way the TypeScript API names files: absolute, long Windows
+ * names (see `longPath`), and `/` separators.
  */
 export function typeScriptPath(file: string): string {
-  const absolute = resolve(file);
-  if (sep === "/") return absolute;
-  let long = absolute;
-  try {
-    long = realpathSync.native(absolute);
-  } catch {
-    // The file doesn't exist yet: keep the path as given.
-  }
-  return long.replaceAll("\\", "/");
+  return longPath(file).replaceAll("\\", "/");
 }
 
 /** A file as a `file://` URI, the form the TypeScript server compares file changes in on every system. */

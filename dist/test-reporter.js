@@ -13,7 +13,8 @@
 //       at exercises/07_unions_narrowing/unions2.ts:24:10
 //
 //   1 passed, 1 failed
-import { relative, resolve, sep } from "node:path";
+import { resolve } from "node:path";
+import { displayRelative, relativizeFileUrls } from "./paths.js";
 import { fileURLToPath } from "node:url";
 import { inspect, styleText } from "node:util";
 // `styleText` checks `process.stdout`: tslings sets FORCE_COLOR or NO_COLOR for this process.
@@ -30,7 +31,7 @@ export function location(error) {
             continue;
         const path = file.startsWith("file://") ? fileURLToPath(file) : file;
         // `/` on every system, like the paths in the rest of tslings' output.
-        return `${relative(process.cwd(), path).split(sep).join("/")}:${line}:${column}`;
+        return `${displayRelative(process.cwd(), path)}:${line}:${column}`;
     }
     return undefined;
 }
@@ -131,8 +132,7 @@ function explain(failure, by) {
 }
 /** Output of the exercise, with paths relative to the exercises' root and without Node's internals. */
 function cleanOutput(message) {
-    return message
-        .replaceAll(`file://${process.cwd()}/`, "")
+    return relativizeFileUrls(message, process.cwd())
         .split("\n")
         .filter((line) => !/^\s+at .*(node:internal|\(node:)/.test(line) && !/^Node\.js v\d/.test(line))
         .join("\n");

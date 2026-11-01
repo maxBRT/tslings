@@ -11,10 +11,11 @@
 // Messages, notes and types are wrapped to the terminal width, so that the
 // terminal never cuts a word; code frames never are.
 
-import { basename, relative, sep } from "node:path";
+import { basename } from "node:path";
 import { styleText } from "node:util";
 import type { Problem } from "./checker.ts";
 import { exerciseNoteFor, noteFor } from "./notes.ts";
+import { displayRelative } from "./paths.ts";
 import { outputWidth } from "./term.ts";
 import type { ShownType } from "./type-tests.ts";
 import { wrapText } from "./wrap.ts";
@@ -235,7 +236,7 @@ export function isLibraryFile(file: string): boolean {
 function displayPath(file: string, cwd: string): string {
   const path = file.replaceAll("\\", "/");
   const index = path.lastIndexOf("/node_modules/");
-  if (index === -1) return relative(cwd, file).split(sep).join("/");
+  if (index === -1) return displayRelative(cwd, file);
   return /^lib\..*\.d\.ts$/.test(basename(path)) ? basename(path) : path.slice(index + "/node_modules/".length);
 }
 

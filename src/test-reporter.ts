@@ -14,7 +14,8 @@
 //
 //   1 passed, 1 failed
 
-import { relative, resolve, sep } from "node:path";
+import { resolve } from "node:path";
+import { displayRelative, relativizeFileUrls } from "./paths.ts";
 import { fileURLToPath } from "node:url";
 import { inspect, styleText } from "node:util";
 import type { TestEvent } from "node:test/reporters";
@@ -36,7 +37,7 @@ export function location(error: unknown): string | undefined {
     if (file.includes("/node_modules/")) continue;
     const path = file.startsWith("file://") ? fileURLToPath(file) : file;
     // `/` on every system, like the paths in the rest of tslings' output.
-    return `${relative(process.cwd(), path).split(sep).join("/")}:${line}:${column}`;
+    return `${displayRelative(process.cwd(), path)}:${line}:${column}`;
   }
   return undefined;
 }
@@ -139,8 +140,7 @@ function explain(failure: Failure, by: string): string {
 
 /** Output of the exercise, with paths relative to the exercises' root and without Node's internals. */
 function cleanOutput(message: string): string {
-  return message
-    .replaceAll(`file://${process.cwd()}/`, "")
+  return relativizeFileUrls(message, process.cwd())
     .split("\n")
     .filter((line) => !/^\s+at .*(node:internal|\(node:)/.test(line) && !/^Node\.js v\d/.test(line))
     .join("\n");

@@ -3,11 +3,12 @@
 // One `Checker` keeps a TypeScript project open for the whole session. After
 // the first check, re-checking a changed file only takes a few milliseconds,
 // which is what keeps the watch mode responsive.
-import { readFileSync, realpathSync } from "node:fs";
-import { resolve, sep } from "node:path";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { NodeFlags, SyntaxKind } from "typescript/unstable/ast";
 import { isArrayLiteralExpression, isAsExpression, isBinaryExpression, isIdentifier, isObjectLiteralExpression, isParenthesizedExpression, isPostfixUnaryExpression, isPrefixUnaryExpression, isPropertyAssignment, isPropertyDeclaration, isShorthandPropertyAssignment, isSpreadAssignment, isSpreadElement, isTypeAssertion, isTypeReferenceNode, isVariableDeclaration, isVariableDeclarationList, } from "typescript/unstable/ast/is";
 import { API, DiagnosticCategory, fileNameToDocumentURI } from "typescript/unstable/sync";
+import { longPath } from "./paths.js";
 import { describeTypeTest, findTypeTests } from "./type-tests.js";
 import { findUnsafeAny } from "./unsafe-any.js";
 /** Lint rules that are always errors: they stop learners from silencing the type checker. */
@@ -60,22 +61,11 @@ const DEFINITE_ASSIGNMENT = {
     note: "`!` after a name tells TypeScript the variable or field is always assigned before it's read, without checking. Give it a value where it's declared or in the constructor, or add `| undefined` to its type and check it before use.",
 };
 /**
- * A file path the way the TypeScript API names files: absolute, with `/` separators.
- * On Windows, short 8.3 names (`C:\Users\RUNNER~1`) are expanded too, so that the
- * path matches the one TypeScript found when it listed the project's files.
+ * A file path the way the TypeScript API names files: absolute, long Windows
+ * names (see `longPath`), and `/` separators.
  */
 export function typeScriptPath(file) {
-    const absolute = resolve(file);
-    if (sep === "/")
-        return absolute;
-    let long = absolute;
-    try {
-        long = realpathSync.native(absolute);
-    }
-    catch {
-        // The file doesn't exist yet: keep the path as given.
-    }
-    return long.replaceAll("\\", "/");
+    return longPath(file).replaceAll("\\", "/");
 }
 /** A file as a `file://` URI, the form the TypeScript server compares file changes in on every system. */
 function documentOf(file) {

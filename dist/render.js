@@ -10,9 +10,10 @@
 //
 // Messages, notes and types are wrapped to the terminal width, so that the
 // terminal never cuts a word; code frames never are.
-import { basename, relative, sep } from "node:path";
+import { basename } from "node:path";
 import { styleText } from "node:util";
 import { exerciseNoteFor, noteFor } from "./notes.js";
+import { displayRelative } from "./paths.js";
 import { outputWidth } from "./term.js";
 import { wrapText } from "./wrap.js";
 /** Narrower than this, wrapping would leave a word or two per line: lines stay longer instead. */
@@ -192,7 +193,7 @@ function displayPath(file, cwd) {
     const path = file.replaceAll("\\", "/");
     const index = path.lastIndexOf("/node_modules/");
     if (index === -1)
-        return relative(cwd, file).split(sep).join("/");
+        return displayRelative(cwd, file);
     return /^lib\..*\.d\.ts$/.test(basename(path)) ? basename(path) : path.slice(index + "/node_modules/".length);
 }
 /**

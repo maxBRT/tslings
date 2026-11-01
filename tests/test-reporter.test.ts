@@ -125,9 +125,9 @@ test("the location skips Node's internal frames", () => {
     "    at AbortController.abort (node:internal/abort_controller:572:18)",
     `    at TestContext.<anonymous> (${pathToFileURL(join(process.cwd(), "exercises", "a.ts")).href}:6:58)`,
   ].join("\n");
-  assert.equal(location(error), `${join("exercises", "a.ts")}:6:58`);
+  assert.equal(location(error), "exercises/a.ts:6:58");
   error.stack = `Error: x\n    at ${pathToFileURL(join(process.cwd(), "exercises", "b.ts")).href}:1:2`;
-  assert.equal(location(error), `${join("exercises", "b.ts")}:1:2`);
+  assert.equal(location(error), "exercises/b.ts:1:2");
   // A plain path, without `file://`, is only recognized when it's absolute the POSIX way.
   if (process.platform !== "win32") {
     error.stack = `Error: x\n    at ${process.cwd()}/exercises/c.ts:1:2`;
