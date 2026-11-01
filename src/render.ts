@@ -33,7 +33,7 @@ export function renderProblems(
 
   const blocks = problems.map((problem) => {
     const lines: string[] = [];
-    const color: Style = problem.severity === "error" ? "red" : "yellow";
+    const color: "red" | "yellow" = problem.severity === "error" ? "red" : "yellow";
     lines.push(
       `${paint(["bold", color], `${problem.severity}[${problem.code}]`)}${paint("bold", `: ${problem.message}`)}`,
     );
@@ -81,7 +81,7 @@ function codeFrame(
   source: string,
   start: number,
   end: number,
-  color: Style,
+  color: "red" | "yellow",
   paint: (style: Style, text: string) => string,
   cwd: string,
 ): string[] {
